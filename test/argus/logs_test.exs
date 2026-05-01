@@ -91,6 +91,22 @@ defmodule Argus.LogsTest do
 
       assert Enum.map(log_events, & &1.message) == ["second", "third"]
     end
+
+    test "stores long log messages and templates" do
+      project = project_fixture(team_fixture())
+      message = String.duplicate("log message ", 40)
+      message_template = String.duplicate("template {value} ", 30)
+
+      assert {:ok, log_event} =
+               Logs.create_log_event(
+                 project,
+                 log_attrs(message)
+                 |> Map.put(:message_template, message_template)
+               )
+
+      assert log_event.message == message
+      assert log_event.message_template == message_template
+    end
   end
 
   defp start_rate_limiter(config) do
