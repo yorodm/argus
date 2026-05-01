@@ -99,7 +99,7 @@ defmodule ArgusWeb.IssuesLive.Index do
               </tr>
             </thead>
             <tbody id="issues" phx-update="stream" class="divide-y divide-zinc-100 bg-white">
-              <tr :if={@issue_count == 0}>
+              <tr :if={@issue_count == 0} id="issues-empty-state">
                 <td colspan="6" class="px-6 py-16">
                   <.empty_state
                     title="No issues match these filters"
@@ -234,7 +234,7 @@ defmodule ArgusWeb.IssuesLive.Index do
     %{
       "search" => Map.get(params, "search", ""),
       "level" => Map.get(params, "level", "all"),
-      "status" => Map.get(params, "status", "all")
+      "status" => Map.get(params, "status", "unresolved")
     }
   end
 

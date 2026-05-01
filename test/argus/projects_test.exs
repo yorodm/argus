@@ -125,6 +125,22 @@ defmodule Argus.ProjectsTest do
     end
   end
 
+  describe "recent_error_events_for_projects/2" do
+    test "returns only unresolved issues" do
+      %{project: project} = workspace_fixture()
+      unresolved_issue = issue_fixture(project, %{title: "Open checkout failure"})
+
+      resolved_issue =
+        issue_fixture(project, %{title: "Resolved checkout failure", fingerprint: "resolved"})
+
+      {:ok, _resolved_issue} = Projects.update_error_event_status(resolved_issue, :resolved)
+
+      recent_issues = Projects.recent_error_events_for_projects([project])
+
+      assert Enum.map(recent_issues, & &1.id) == [unresolved_issue.id]
+    end
+  end
+
   describe "occurrence queries" do
     test "lists lightweight occurrence summaries and fetches the selected occurrence separately" do
       %{project: project} = workspace_fixture()

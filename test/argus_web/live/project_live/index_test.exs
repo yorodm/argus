@@ -3,6 +3,8 @@ defmodule ArgusWeb.ProjectLive.IndexTest do
 
   import Phoenix.LiveViewTest
 
+  alias Argus.Projects
+
   import Argus.AccountsFixtures
   import Argus.WorkspaceFixtures
 
@@ -22,6 +24,28 @@ defmodule ArgusWeb.ProjectLive.IndexTest do
     assert has_element?(view, "#project-card-#{project.id}")
     assert render(view) =~ "Recent issues"
     assert render(view) =~ "My First Project"
+  end
+
+  test "recent issues only shows unresolved issues", %{conn: conn} do
+    user = user_fixture()
+    team = team_fixture(%{name: "Engineering"})
+    _membership = membership_fixture(team, user, :admin)
+    project = project_fixture(team, %{"name" => "My First Project"})
+    _unresolved_issue = issue_fixture(project, %{title: "Open checkout failure"})
+
+    resolved_issue =
+      issue_fixture(project, %{title: "Resolved checkout failure", fingerprint: "resolved"})
+
+    {:ok, _resolved_issue} = Projects.update_error_event_status(resolved_issue, :resolved)
+
+    {:ok, view, _html} =
+      conn
+      |> log_in_user(user)
+      |> live(~p"/projects")
+
+    recent_issues_html = render(element(view, "#recent-issues"))
+
+    refute recent_issues_html =~ resolved_issue.title
   end
 
   test "renders the empty state when the active team has no projects", %{conn: conn} do

@@ -49,6 +49,30 @@ defmodule ArgusWeb.IssuesLive.IndexTest do
     refute html =~ "Background job stalled"
   end
 
+  test "defaults to unresolved issues", %{conn: conn, project: project} do
+    unresolved_issue = issue_fixture(project, %{title: "Database timeout"})
+    resolved_issue = issue_fixture(project, %{title: "Resolved timeout", fingerprint: "resolved"})
+    {:ok, _resolved_issue} = Projects.update_error_event_status(resolved_issue, :resolved)
+
+    {:ok, view, _html} = live(conn, ~p"/projects/#{project.slug}/issues")
+
+    html = render(view)
+
+    assert html =~ unresolved_issue.title
+    refute html =~ resolved_issue.title
+
+    render_change(
+      form(view, "#issue-filters", %{
+        "filters" => %{"search" => "", "level" => "all", "status" => "all"}
+      })
+    )
+
+    html = render(view)
+
+    assert html =~ unresolved_issue.title
+    assert html =~ resolved_issue.title
+  end
+
   test "bulk resolves selected issues", %{conn: conn, project: project} do
     issue = issue_fixture(project, %{title: "Database timeout"})
 

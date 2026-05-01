@@ -226,7 +226,7 @@ defmodule Argus.Projects do
 
     Repo.all(
       from error_event in ErrorEvent,
-        where: error_event.project_id in ^project_ids,
+        where: error_event.project_id in ^project_ids and error_event.status == :unresolved,
         order_by: [desc: error_event.last_seen_at, desc: error_event.id],
         limit: ^limit,
         preload: [project: :team, assignee: []]

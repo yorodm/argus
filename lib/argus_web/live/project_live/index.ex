@@ -200,7 +200,7 @@ defmodule ArgusWeb.ProjectLive.Index do
                 </div>
               </section>
 
-              <section class="border border-zinc-200 bg-white p-6">
+              <section id="recent-issues" class="border border-zinc-200 bg-white p-6">
                 <div>
                   <h2 class="text-lg font-semibold tracking-tight text-zinc-950">Recent issues</h2>
                   <p class="mt-1 text-sm text-zinc-500">
