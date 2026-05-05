@@ -18,6 +18,10 @@ Each deployment hosts one internal workspace. Admins invite users, teams own pro
 
 ![Argus log detail](docs/screenshots/log-detail.png)
 
+### Metrics
+
+![Argus metrics dashboard](docs/screenshots/metrics.png)
+
 ## Quick Start
 
 1. Install dependencies and prepare the database:
@@ -54,6 +58,7 @@ The project DSN key is printed to stdout when the seeds run.
 - error grouping by fingerprint
 - raw occurrences for event-level debugging
 - separate log storage with live tail support
+- Sentry metrics ingestion with charts and raw metric point inspection
 - users, teams, projects, invitations, and issue assignment
 - email notifications and an optional webhook for new and reappearing issues
 

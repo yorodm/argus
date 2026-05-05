@@ -203,6 +203,9 @@ defmodule ArgusWeb.ProjectLive.Index do
                       <.button navigate={~p"/projects/#{project.slug}/logs"} variant="secondary">
                         Logs
                       </.button>
+                      <.button navigate={~p"/projects/#{project.slug}/metrics"} variant="secondary">
+                        Metrics
+                      </.button>
                     </div>
                   </article>
                 </div>

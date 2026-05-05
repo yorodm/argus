@@ -9,6 +9,7 @@ defmodule Argus.Ingest do
 
   alias Argus.Ingest.Envelope
   alias Argus.Logs
+  alias Argus.Metrics
   alias Argus.Projects
   alias Argus.Projects.Project
 
@@ -131,10 +132,10 @@ defmodule Argus.Ingest do
   defp process_envelope(%Project{} = project, envelope) do
     envelope_event_id = Map.get(envelope.headers, "event_id")
 
-    {event_payload, minidump_attachment, log_payloads} =
-      Enum.reduce(envelope.items, {nil, nil, []}, fn item,
-                                                     {event_payload, minidump_attachment,
-                                                      log_payloads} ->
+    {event_payload, minidump_attachment, log_payloads, metric_payloads} =
+      Enum.reduce(envelope.items, {nil, nil, [], []}, fn item,
+                                                         {event_payload, minidump_attachment,
+                                                          log_payloads, metric_payloads} ->
         type = item.headers["type"]
 
         cond do
@@ -151,28 +152,41 @@ defmodule Argus.Ingest do
                   nil
               end
 
-            {payload, minidump_attachment, log_payloads}
+            {payload, minidump_attachment, log_payloads, metric_payloads}
 
           type == "attachment" and item.headers["attachment_type"] == "event.minidump" ->
-            {event_payload, item.payload, log_payloads}
+            {event_payload, item.payload, log_payloads, metric_payloads}
 
           type == "log" ->
             case decode_json_payload(item.payload) do
               {:ok, payload} when is_map(payload) ->
-                {event_payload, minidump_attachment, [payload | log_payloads]}
+                {event_payload, minidump_attachment, [payload | log_payloads], metric_payloads}
 
               _ ->
-                {event_payload, minidump_attachment, log_payloads}
+                {event_payload, minidump_attachment, log_payloads, metric_payloads}
+            end
+
+          type == "trace_metric" ->
+            case decode_json_payload(item.payload) do
+              {:ok, payload} when is_map(payload) ->
+                {event_payload, minidump_attachment, log_payloads, [payload | metric_payloads]}
+
+              _ ->
+                {event_payload, minidump_attachment, log_payloads, metric_payloads}
             end
 
           true ->
-            {event_payload, minidump_attachment, log_payloads}
+            {event_payload, minidump_attachment, log_payloads, metric_payloads}
         end
       end)
 
     log_payloads
     |> Enum.reverse()
     |> Enum.each(&store_log_payload(project, &1))
+
+    metric_payloads
+    |> Enum.reverse()
+    |> Enum.each(&store_metric_payload(project, &1))
 
     cond do
       is_map(event_payload) ->
@@ -185,6 +199,9 @@ defmodule Argus.Ingest do
         end
 
       log_payloads != [] ->
+        {:ok, :accepted}
+
+      metric_payloads != [] ->
         {:ok, :accepted}
 
       true ->
@@ -227,6 +244,13 @@ defmodule Argus.Ingest do
   end
 
   defp store_log_payload(_project, _payload), do: :ok
+
+  defp store_metric_payload(%Project{} = project, %{"items" => items}) when is_list(items) do
+    _ = Metrics.create_metric_points(project, items)
+    :ok
+  end
+
+  defp store_metric_payload(_project, _payload), do: :ok
 
   defp build_issue_attrs(payload) do
     timestamp = parse_timestamp(payload["timestamp"]) || DateTime.utc_now(:second)

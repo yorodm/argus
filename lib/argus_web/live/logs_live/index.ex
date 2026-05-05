@@ -21,6 +21,9 @@ defmodule ArgusWeb.LogsLive.Index do
           <.button navigate={~p"/projects/#{@project.slug}/issues"} variant="secondary">
             Issues
           </.button>
+          <.button navigate={~p"/projects/#{@project.slug}/metrics"} variant="secondary">
+            Metrics
+          </.button>
           <.button
             :if={@can_manage_project?}
             navigate={~p"/projects/#{@project.slug}/settings"}
@@ -213,6 +216,7 @@ defmodule ArgusWeb.LogsLive.Index do
         <div class="space-y-3">
           <.shortcut_row keys="G then I" label="Go to issues" />
           <.shortcut_row keys="G then L" label="Go to logs" />
+          <.shortcut_row keys="G then M" label="Go to metrics" />
           <.shortcut_row keys="?" label="Show shortcuts" />
         </div>
         <:actions>
@@ -285,6 +289,10 @@ defmodule ArgusWeb.LogsLive.Index do
 
   def handle_event("shortcut", %{"key" => "g l"}, socket) do
     {:noreply, push_navigate(socket, to: ~p"/projects/#{socket.assigns.project.slug}/logs")}
+  end
+
+  def handle_event("shortcut", %{"key" => "g m"}, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/projects/#{socket.assigns.project.slug}/metrics")}
   end
 
   def handle_event("shortcut", %{"key" => "help"}, socket) do

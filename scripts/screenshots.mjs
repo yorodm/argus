@@ -257,6 +257,14 @@ async function main() {
         "log-detail.png",
         1400,
       )
+
+      await capturePage(
+        sessionId,
+        manifest.routes.metrics,
+        "#project-metrics-chart .apexcharts-canvas",
+        "metrics.png",
+        1400,
+      )
     } finally {
       await deleteSession(sessionId)
     }

@@ -24,6 +24,9 @@ defmodule ArgusWeb.ProjectLive.Settings do
           <.button navigate={~p"/projects/#{@project.slug}/logs"} variant="secondary">
             Logs
           </.button>
+          <.button navigate={~p"/projects/#{@project.slug}/metrics"} variant="secondary">
+            Metrics
+          </.button>
           <.button navigate={~p"/teams/#{@project.team.id}/settings?tab=projects"} variant="ghost">
             Team settings
           </.button>

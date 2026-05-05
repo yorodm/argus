@@ -49,6 +49,12 @@ config :argus, Argus.Logs.RateLimiter,
   max_logs: 1_000,
   window_seconds: 60
 
+config :argus, Argus.Metrics, retention_days: 30
+
+config :live_charts,
+  adapter: LiveCharts.Adapter.ApexCharts,
+  json_library: Jason
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",

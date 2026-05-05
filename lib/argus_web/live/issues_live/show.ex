@@ -15,6 +15,9 @@ defmodule ArgusWeb.IssuesLive.Show do
           <.button navigate={~p"/projects/#{@project.slug}/issues"} variant="ghost" size="sm">
             <.icon name="hero-arrow-left-mini" class="size-4" /> Back to issues
           </.button>
+          <.button navigate={~p"/projects/#{@project.slug}/metrics"} variant="secondary" size="sm">
+            Metrics
+          </.button>
           <.icon_button
             id="copy-issue-button"
             type="button"
@@ -579,6 +582,7 @@ defmodule ArgusWeb.IssuesLive.Show do
           <.shortcut_row keys="K" label="Newer event" />
           <.shortcut_row keys="G then I" label="Go to issues" />
           <.shortcut_row keys="G then L" label="Go to logs" />
+          <.shortcut_row keys="G then M" label="Go to metrics" />
           <.shortcut_row keys="?" label="Show shortcuts" />
         </div>
         <:actions>
@@ -681,6 +685,10 @@ defmodule ArgusWeb.IssuesLive.Show do
 
   def handle_event("shortcut", %{"key" => "g l"}, socket) do
     {:noreply, push_navigate(socket, to: ~p"/projects/#{socket.assigns.project.slug}/logs")}
+  end
+
+  def handle_event("shortcut", %{"key" => "g m"}, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/projects/#{socket.assigns.project.slug}/metrics")}
   end
 
   def handle_event("shortcut", %{"key" => "help"}, socket) do

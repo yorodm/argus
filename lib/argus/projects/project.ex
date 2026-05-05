@@ -19,6 +19,7 @@ defmodule Argus.Projects.Project do
     belongs_to :team, Argus.Teams.Team
     has_many :error_events, Argus.Projects.ErrorEvent
     has_many :log_events, Argus.Logs.LogEvent
+    has_many :metric_points, Argus.Metrics.MetricPoint
 
     timestamps(type: :utc_datetime)
   end

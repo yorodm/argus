@@ -19,6 +19,9 @@ defmodule ArgusWeb.LogsLive.Show do
           <.button navigate={~p"/projects/#{@project.slug}/issues"} variant="secondary" size="sm">
             Issues
           </.button>
+          <.button navigate={~p"/projects/#{@project.slug}/metrics"} variant="secondary" size="sm">
+            Metrics
+          </.button>
         </:actions>
       </.header>
 

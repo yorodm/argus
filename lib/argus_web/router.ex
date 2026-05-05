@@ -43,6 +43,7 @@ defmodule ArgusWeb.Router do
       live "/projects/:slug/issues/:id", IssuesLive.Show, :show
       live "/projects/:slug/logs", LogsLive.Index, :index
       live "/projects/:slug/logs/:id", LogsLive.Show, :show
+      live "/projects/:slug/metrics", MetricsLive.Index, :index
       live "/projects/:slug/settings", ProjectLive.Settings, :show
       live "/teams/:id/settings", TeamLive.Settings, :show
       live "/settings", UserLive.Settings, :edit

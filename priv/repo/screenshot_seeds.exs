@@ -2,6 +2,8 @@ alias Argus.Accounts
 alias Argus.Accounts.User
 alias Argus.Logs
 alias Argus.Logs.LogEvent
+alias Argus.Metrics
+alias Argus.Metrics.MetricPoint
 alias Argus.Projects
 alias Argus.Projects.{ErrorEvent, ErrorOccurrence, Project}
 alias Argus.Repo
@@ -10,7 +12,9 @@ alias Argus.Teams.Team
 
 import Ecto.Query
 
-manifest_path = System.get_env("ARGUS_SCREENSHOT_MANIFEST_PATH") || "/tmp/argus-screenshot-manifest.json"
+manifest_path =
+  System.get_env("ARGUS_SCREENSHOT_MANIFEST_PATH") || "/tmp/argus-screenshot-manifest.json"
+
 screenshot_password = System.get_env("ARGUS_SCREENSHOT_PASSWORD") || "screenshots123"
 
 ensure_user = fn email, name, role, password ->
@@ -80,12 +84,26 @@ ensure_project = fn team, attrs ->
 end
 
 reset_project_data = fn project ->
-  from(occurrence in ErrorOccurrence, where: occurrence.project_id == ^project.id) |> Repo.delete_all()
+  from(occurrence in ErrorOccurrence, where: occurrence.project_id == ^project.id)
+  |> Repo.delete_all()
+
   from(issue in ErrorEvent, where: issue.project_id == ^project.id) |> Repo.delete_all()
   from(log_event in LogEvent, where: log_event.project_id == ^project.id) |> Repo.delete_all()
+
+  from(metric_point in MetricPoint, where: metric_point.project_id == ^project.id)
+  |> Repo.delete_all()
 end
 
-capture_occurrence = fn event_id, timestamp, request_url, release, exception_type, exception_value, frames, breadcrumbs, tags, extra ->
+capture_occurrence = fn event_id,
+                        timestamp,
+                        request_url,
+                        release,
+                        exception_type,
+                        exception_value,
+                        frames,
+                        breadcrumbs,
+                        tags,
+                        extra ->
   %{
     event_id: event_id,
     timestamp: timestamp,
@@ -213,7 +231,8 @@ payments_frames = [
       "payload = build_gateway_payload(order)",
       "headers = signed_headers(merchant)"
     ],
-    "context_line" => "response = stripe_client.post(\"/charges\", json=payload, headers=headers)",
+    "context_line" =>
+      "response = stripe_client.post(\"/charges\", json=payload, headers=headers)",
     "post_context" => ["return normalize_charge_response(response)"],
     "vars" => %{
       "merchant_id" => "\"mrc_4102\"",
@@ -333,85 +352,93 @@ payments_issue =
 
 {:ok, payments_issue} = Projects.assign_error_event(screenshot_user, payments_issue, assignee.id)
 
-create_issue.(payments_project, %{
-  fingerprint: "TimeoutError|issuer lookup timed out|payments.issuer.lookup",
-  title: "TimeoutError: issuer lookup timed out",
-  culprit: "/cards/issuer",
-  level: :warning,
-  platform: "python",
-  sdk: %{"name" => "sentry.python.django", "version" => "2.54.0"},
-  request: %{"url" => "http://localhost:8000/cards/issuer"},
-  contexts: %{"runtime" => %{"name" => "CPython", "version" => "3.12.11"}},
-  tags: %{"environment" => "production"},
-  extra: %{"issuer" => "visa"},
-  first_seen_at: ~U[2026-03-28 21:43:00Z],
-  last_seen_at: ~U[2026-03-28 21:43:00Z],
-  occurrence_count: 1,
-  status: :resolved
-}, [
-  capture_occurrence.(
-    "evt-payments-warning-001",
-    ~U[2026-03-28 21:43:00Z],
-    "http://localhost:8000/cards/issuer",
-    "payments-web@2026.3.28",
-    "TimeoutError",
-    "issuer lookup timed out",
-    payments_frames,
-    payments_breadcrumbs,
-    %{"environment" => "production"},
-    %{"issuer" => "visa"}
-  )
-])
+create_issue.(
+  payments_project,
+  %{
+    fingerprint: "TimeoutError|issuer lookup timed out|payments.issuer.lookup",
+    title: "TimeoutError: issuer lookup timed out",
+    culprit: "/cards/issuer",
+    level: :warning,
+    platform: "python",
+    sdk: %{"name" => "sentry.python.django", "version" => "2.54.0"},
+    request: %{"url" => "http://localhost:8000/cards/issuer"},
+    contexts: %{"runtime" => %{"name" => "CPython", "version" => "3.12.11"}},
+    tags: %{"environment" => "production"},
+    extra: %{"issuer" => "visa"},
+    first_seen_at: ~U[2026-03-28 21:43:00Z],
+    last_seen_at: ~U[2026-03-28 21:43:00Z],
+    occurrence_count: 1,
+    status: :resolved
+  },
+  [
+    capture_occurrence.(
+      "evt-payments-warning-001",
+      ~U[2026-03-28 21:43:00Z],
+      "http://localhost:8000/cards/issuer",
+      "payments-web@2026.3.28",
+      "TimeoutError",
+      "issuer lookup timed out",
+      payments_frames,
+      payments_breadcrumbs,
+      %{"environment" => "production"},
+      %{"issuer" => "visa"}
+    )
+  ]
+)
 
-create_issue.(storefront_project, %{
-  fingerprint: "TypeError|cart line missing price|storefront.cart.render",
-  title: "TypeError: cart line missing price",
-  culprit: "/cart",
-  level: :error,
-  platform: "python",
-  sdk: %{"name" => "sentry.python.django", "version" => "2.54.0"},
-  request: %{"url" => "http://localhost:8000/cart"},
-  contexts: %{"runtime" => %{"name" => "CPython", "version" => "3.12.11"}},
-  tags: %{"environment" => "production", "release" => "storefront-web@2026.3.28"},
-  extra: %{"cart_id" => "cart_11"},
-  first_seen_at: ~U[2026-03-28 20:54:00Z],
-  last_seen_at: ~U[2026-03-28 20:54:00Z],
-  occurrence_count: 1,
-  status: :unresolved
-}, [
-  capture_occurrence.(
-    "evt-storefront-001",
-    ~U[2026-03-28 20:54:00Z],
-    "http://localhost:8000/cart",
-    "storefront-web@2026.3.28",
-    "TypeError",
-    "cart line missing price",
-    [
-      %{
-        "filename" => "/srv/app/storefront/cart.py",
-        "function" => "render_cart",
-        "module" => "storefront.cart",
-        "lineno" => 63,
-        "in_app" => true,
-        "pre_context" => ["for line in cart.lines:", "  price = line.get(\"price\")"],
-        "context_line" => "total += price",
-        "post_context" => ["return total"],
-        "vars" => %{"line_id" => "\"line_11\"", "price" => "nil"}
-      }
-    ],
-    [
-      %{
-        "timestamp" => "2026-03-28T20:53:59Z",
-        "type" => "log",
-        "category" => "query",
-        "message" => "Loaded cart lines",
-        "data" => %{"cart_id" => "cart_11", "rows" => 4}
-      }
-    ],
-    %{"environment" => "production", "release" => "storefront-web@2026.3.28"},
-    %{"cart_id" => "cart_11"}
-  )
-])
+create_issue.(
+  storefront_project,
+  %{
+    fingerprint: "TypeError|cart line missing price|storefront.cart.render",
+    title: "TypeError: cart line missing price",
+    culprit: "/cart",
+    level: :error,
+    platform: "python",
+    sdk: %{"name" => "sentry.python.django", "version" => "2.54.0"},
+    request: %{"url" => "http://localhost:8000/cart"},
+    contexts: %{"runtime" => %{"name" => "CPython", "version" => "3.12.11"}},
+    tags: %{"environment" => "production", "release" => "storefront-web@2026.3.28"},
+    extra: %{"cart_id" => "cart_11"},
+    first_seen_at: ~U[2026-03-28 20:54:00Z],
+    last_seen_at: ~U[2026-03-28 20:54:00Z],
+    occurrence_count: 1,
+    status: :unresolved
+  },
+  [
+    capture_occurrence.(
+      "evt-storefront-001",
+      ~U[2026-03-28 20:54:00Z],
+      "http://localhost:8000/cart",
+      "storefront-web@2026.3.28",
+      "TypeError",
+      "cart line missing price",
+      [
+        %{
+          "filename" => "/srv/app/storefront/cart.py",
+          "function" => "render_cart",
+          "module" => "storefront.cart",
+          "lineno" => 63,
+          "in_app" => true,
+          "pre_context" => ["for line in cart.lines:", "  price = line.get(\"price\")"],
+          "context_line" => "total += price",
+          "post_context" => ["return total"],
+          "vars" => %{"line_id" => "\"line_11\"", "price" => "nil"}
+        }
+      ],
+      [
+        %{
+          "timestamp" => "2026-03-28T20:53:59Z",
+          "type" => "log",
+          "category" => "query",
+          "message" => "Loaded cart lines",
+          "data" => %{"cart_id" => "cart_11", "rows" => 4}
+        }
+      ],
+      %{"environment" => "production", "release" => "storefront-web@2026.3.28"},
+      %{"cart_id" => "cart_11"}
+    )
+  ]
+)
 
 {:ok, log_event} =
   Logs.create_log_event(
@@ -420,29 +447,29 @@ create_issue.(storefront_project, %{
       level: :warning,
       message: "Payment provider degraded",
       timestamp: ~U[2026-03-28 22:28:25Z],
-    metadata: %{
-      "attributes" => %{
-        "logger.name" => "payments.alerts",
-        "code.function_name" => "capture_payment",
-        "deployment.environment" => "production",
-        "http.route" => "/checkout/charge",
-        "payment.provider" => "stripe",
-        "sentry.severity_number" => 13
+      metadata: %{
+        "attributes" => %{
+          "logger.name" => "payments.alerts",
+          "code.function_name" => "capture_payment",
+          "deployment.environment" => "production",
+          "http.route" => "/checkout/charge",
+          "payment.provider" => "stripe",
+          "sentry.severity_number" => 13
+        },
+        "context" => %{
+          "merchant_id" => "mrc_4102",
+          "order_id" => "ord_9041",
+          "path" => "/checkout/charge"
+        }
       },
-      "context" => %{
-        "merchant_id" => "mrc_4102",
-        "order_id" => "ord_9041",
-        "path" => "/checkout/charge"
-      }
-    },
-    logger_name: "payments.alerts",
-    origin: "sentry",
-    release: "payments-web@2026.3.28",
-    environment: "production",
-    sdk_name: "sentry.python.django",
-    sdk_version: "2.54.0",
-    sequence: 482,
-    trace_id: "4d0d4a7bc1a14247a8c6c7b1a3be2f6d",
+      logger_name: "payments.alerts",
+      origin: "sentry",
+      release: "payments-web@2026.3.28",
+      environment: "production",
+      sdk_name: "sentry.python.django",
+      sdk_version: "2.54.0",
+      sequence: 482,
+      trace_id: "4d0d4a7bc1a14247a8c6c7b1a3be2f6d",
       span_id: "93db2afab2dce842"
     },
     bypass_rate_limit: true
@@ -486,6 +513,72 @@ create_issue.(storefront_project, %{
     bypass_rate_limit: true
   )
 
+metric_base = DateTime.utc_now(:second)
+
+metric_offsets = [
+  {-54, 171.4, 3, 11},
+  {-48, 164.2, 5, 13},
+  {-42, 186.9, 4, 16},
+  {-36, 142.7, 8, 14},
+  {-30, 155.1, 6, 17},
+  {-24, 203.8, 7, 21},
+  {-18, 191.5, 9, 19},
+  {-12, 168.2, 6, 15},
+  {-6, 149.6, 5, 13},
+  {0, 137.9, 4, 12}
+]
+
+metric_items =
+  Enum.flat_map(metric_offsets, fn {minutes_ago, duration, failures, depth} ->
+    timestamp =
+      metric_base
+      |> DateTime.add(minutes_ago * 60, :second)
+      |> DateTime.to_iso8601()
+
+    [
+      %{
+        "timestamp" => timestamp,
+        "name" => "checkout.duration",
+        "type" => "distribution",
+        "value" => duration,
+        "unit" => "millisecond",
+        "trace_id" => "4d0d4a7bc1a14247a8c6c7b1a3be2f6d",
+        "span_id" => "93db2afab2dce842",
+        "attributes" => %{
+          "http.route" => %{"value" => "/checkout/charge", "type" => "string"},
+          "deployment.environment" => %{"value" => "production", "type" => "string"},
+          "payment.provider" => %{"value" => "stripe", "type" => "string"}
+        }
+      },
+      %{
+        "timestamp" => timestamp,
+        "name" => "checkout.failed_authorizations",
+        "type" => "counter",
+        "value" => failures,
+        "unit" => "request",
+        "trace_id" => "4d0d4a7bc1a14247a8c6c7b1a3be2f6d",
+        "attributes" => %{
+          "http.route" => %{"value" => "/checkout/charge", "type" => "string"},
+          "deployment.environment" => %{"value" => "production", "type" => "string"},
+          "payment.provider" => %{"value" => "stripe", "type" => "string"}
+        }
+      },
+      %{
+        "timestamp" => timestamp,
+        "name" => "capture.queue_depth",
+        "type" => "gauge",
+        "value" => depth,
+        "unit" => "job",
+        "attributes" => %{
+          "queue" => %{"value" => "capture_retry", "type" => "string"},
+          "deployment.environment" => %{"value" => "production", "type" => "string"}
+        }
+      }
+    ]
+  end)
+
+{:ok, _metric_count} = Metrics.create_metric_points(payments_project, metric_items)
+
 manifest = %{
   "login" => %{
     "email" => screenshot_user.email,
@@ -494,7 +587,9 @@ manifest = %{
   "routes" => %{
     "dashboard" => "/projects",
     "issue_detail" => "/projects/#{payments_project.slug}/issues/#{payments_issue.id}",
-    "log_detail" => "/projects/#{payments_project.slug}/logs/#{log_event.id}"
+    "log_detail" => "/projects/#{payments_project.slug}/logs/#{log_event.id}",
+    "metrics" =>
+      "/projects/#{payments_project.slug}/metrics?name=checkout.duration&type=distribution&window=1h"
   }
 }
 

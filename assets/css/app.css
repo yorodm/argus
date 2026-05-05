@@ -26,3 +26,7 @@ body {
   background: #18181b;
   color: white;
 }
+
+#project-metrics-chart {
+  height: 100%;
+}

@@ -4,6 +4,7 @@ defmodule ArgusWeb.IngestControllerTest do
   import Ecto.Query
 
   alias Argus.Logs.LogEvent
+  alias Argus.Metrics.MetricPoint
   alias Argus.Projects
   alias Argus.Projects.{ErrorEvent, ErrorOccurrence}
   alias Argus.Repo
@@ -225,6 +226,65 @@ defmodule ArgusWeb.IngestControllerTest do
       assert Enum.all?(log_events, &(&1.logger_name == "sentry"))
       assert Enum.all?(log_events, &(&1.environment == "production"))
       assert Enum.all?(log_events, &(&1.sdk_name == "sentry.python"))
+    end
+
+    test "creates metric points from python sdk trace metric envelopes", %{
+      conn: conn,
+      project: project
+    } do
+      timestamp = DateTime.utc_now(:second)
+
+      metric_payload =
+        Jason.encode!(%{
+          "items" => [
+            %{
+              "timestamp" => DateTime.to_unix(timestamp) + 0.7555397,
+              "trace_id" => "bb8e667ffaba4703bb9b10bc5ff7099f",
+              "span_id" => "b8a25c2fa7e15e4c",
+              "name" => "queue.depth",
+              "type" => "gauge",
+              "value" => 42,
+              "unit" => "item",
+              "attributes" => %{
+                "queue" => %{"value" => "default", "type" => "string"},
+                "active" => %{"value" => true, "type" => "boolean"}
+              }
+            },
+            %{"name" => "ignored.metric", "type" => "set", "value" => 1}
+          ]
+        })
+
+      envelope =
+        build_envelope(
+          %{"dsn" => Projects.issue_dsn(project), "sent_at" => "2026-03-28T22:26:35.758741Z"},
+          [
+            %{
+              "type" => "trace_metric",
+              "item_count" => 2,
+              "content_type" => "application/vnd.sentry.items.trace-metric+json"
+            },
+            metric_payload
+          ]
+        )
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/x-sentry-envelope")
+        |> post(~p"/api/#{project.id}/envelope/", envelope)
+
+      assert response(conn, 200) == ""
+
+      metric_point =
+        Repo.one!(from metric_point in MetricPoint, where: metric_point.project_id == ^project.id)
+
+      assert metric_point.timestamp == timestamp
+      assert metric_point.name == "queue.depth"
+      assert metric_point.type == :gauge
+      assert metric_point.value == 42.0
+      assert metric_point.unit == "item"
+      assert metric_point.trace_id == "bb8e667ffaba4703bb9b10bc5ff7099f"
+      assert metric_point.span_id == "b8a25c2fa7e15e4c"
+      assert metric_point.attributes == %{"queue" => "default", "active" => true}
     end
 
     test "accepts brotli-compressed envelopes", %{conn: conn, project: project} do

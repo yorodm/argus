@@ -3,6 +3,7 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/argus"
 import topbar from "../vendor/topbar"
+import LiveCharts from "live_charts"
 
 const RelativeTime = {
   mounted() {
@@ -87,7 +88,7 @@ const KeyboardShortcuts = {
         clearTimeout(this.resetTimer)
         this.sequence = ""
 
-        if (key === "i" || key === "l") {
+        if (key === "i" || key === "l" || key === "m") {
           event.preventDefault()
           this.pushEvent("shortcut", {key: `g ${key}`})
         }
@@ -198,6 +199,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ClipboardCopy,
     ToastViewport,
     KeyboardShortcuts,
+    ...LiveCharts.Hooks,
   },
 })
 

@@ -5,6 +5,7 @@ defmodule Argus.WorkspaceFixtures do
 
   alias Argus.Accounts.User
   alias Argus.Logs
+  alias Argus.Metrics
   alias Argus.Projects
   alias Argus.Teams
   alias Argus.Teams.Team
@@ -104,5 +105,25 @@ defmodule Argus.WorkspaceFixtures do
       |> then(&Logs.create_log_event(project, &1))
 
     log_event
+  end
+
+  def metric_fixture(project, attrs \\ %{}) do
+    {:ok, metric_point} =
+      attrs
+      |> Map.new()
+      |> Enum.into(%{
+        timestamp: DateTime.utc_now(:second),
+        name: "button_click",
+        type: :counter,
+        value: 1.0,
+        unit: nil,
+        trace_id: "trace-123",
+        span_id: "span-456",
+        attributes: %{"route" => "/checkout"},
+        raw_payload: %{"name" => "button_click"}
+      })
+      |> then(&Metrics.create_metric_point(project, &1))
+
+    metric_point
   end
 end
