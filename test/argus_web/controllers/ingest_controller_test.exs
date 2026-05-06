@@ -127,6 +127,84 @@ defmodule ArgusWeb.IngestControllerTest do
       assert issue.occurrence_count == 1
     end
 
+    test "accepts javascript event envelopes with bare-list breadcrumbs", %{
+      conn: conn,
+      project: project
+    } do
+      event_id = "0263971278634e52b718cbb944acda14"
+
+      breadcrumbs = [
+        %{
+          "timestamp" => 1_778_091_981.028,
+          "category" => "navigation",
+          "data" => %{"from" => "/test", "to" => "/test"}
+        },
+        %{
+          "timestamp" => 1_778_092_141.755,
+          "category" => "ui.click",
+          "message" => "div.d-flex.gap-2.flex-wrap > button.btn.btn-danger[type=\"button\"]"
+        },
+        "ignored breadcrumb"
+      ]
+
+      payload =
+        error_payload(event_id, %{
+          "platform" => "javascript",
+          "sdk" => %{"name" => "sentry.javascript.nextjs", "version" => "10.45.0"},
+          "request" => %{"url" => "http://127.0.0.1:3000/test"},
+          "breadcrumbs" => breadcrumbs,
+          "exception" => %{
+            "values" => [
+              %{
+                "type" => "Error",
+                "value" => "Sentry test client error from /test page",
+                "stacktrace" => %{
+                  "frames" => [
+                    %{
+                      "filename" => "pages\\test\\index.js",
+                      "function" => "throwClientError",
+                      "in_app" => true,
+                      "lineno" => 24
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        })
+
+      payload_json = Jason.encode!(payload)
+
+      envelope =
+        build_envelope(
+          %{
+            "event_id" => event_id,
+            "sent_at" => "2026-05-06T18:29:02.171Z",
+            "sdk" => %{"name" => "sentry.javascript.nextjs", "version" => "10.45.0"}
+          },
+          [%{"type" => "event"}, payload_json]
+        )
+
+      conn =
+        conn
+        |> put_req_header("content-type", "application/x-sentry-envelope")
+        |> post(~p"/api/#{project.id}/envelope/?sentry_key=#{project.dsn_key}", envelope)
+
+      assert %{"id" => ^event_id} = json_response(conn, 200)
+
+      issue =
+        Repo.one!(from error_event in ErrorEvent, where: error_event.project_id == ^project.id)
+
+      occurrence =
+        Repo.one!(
+          from error_occurrence in ErrorOccurrence,
+            where: error_occurrence.error_event_id == ^issue.id
+        )
+
+      assert issue.title == "Error: Sentry test client error from /test page"
+      assert occurrence.breadcrumbs == Enum.filter(breadcrumbs, &is_map/1)
+    end
+
     test "creates log events from envelope log items", %{conn: conn, project: project} do
       log_payload =
         Jason.encode!(%{

@@ -335,12 +335,15 @@ defmodule Argus.Ingest do
     end
   end
 
-  defp breadcrumbs(payload) do
-    case get_in(payload, ["breadcrumbs", "values"]) || payload["breadcrumbs"] do
-      values when is_list(values) -> Enum.filter(values, &is_map/1)
-      _ -> []
-    end
+  defp breadcrumbs(%{"breadcrumbs" => %{"values" => values}}) when is_list(values) do
+    Enum.filter(values, &is_map/1)
   end
+
+  defp breadcrumbs(%{"breadcrumbs" => values}) when is_list(values) do
+    Enum.filter(values, &is_map/1)
+  end
+
+  defp breadcrumbs(_payload), do: []
 
   defp normalize_tags(tags) when is_map(tags), do: tags
 
