@@ -18,6 +18,7 @@ defmodule Argus.Projects.IssueNotifier do
   @task_supervisor Argus.TaskSupervisor
   @issue_events [:created, :reopened, :assigned, :unassigned, :resolved, :ignored, :unresolved]
   @status_events [:resolved, :ignored, :unresolved]
+  @webhook_events @issue_events
 
   def send_test_webhook(%Project{} = project) do
     case project_webhook(project) do
@@ -56,6 +57,19 @@ defmodule Argus.Projects.IssueNotifier do
       :ok
   end
 
+  def notify_webhook_async(%ErrorEvent{} = issue, event, opts \\ [])
+      when event in @webhook_events and is_list(opts) do
+    Task.Supervisor.start_child(@task_supervisor, fn ->
+      deliver_webhook_event(issue, event, opts)
+    end)
+
+    :ok
+  rescue
+    error ->
+      Logger.warning("failed to start issue webhook task: #{Exception.message(error)}")
+      :ok
+  end
+
   def deliver(%ErrorEvent{} = issue, event, opts \\ []) when event in @issue_events do
     issue
     |> deliver_emails(event, opts)
@@ -64,9 +78,25 @@ defmodule Argus.Projects.IssueNotifier do
     :ok
   end
 
+  def deliver_webhook_event(%ErrorEvent{} = issue, event, opts \\ [])
+      when event in @webhook_events and is_list(opts) do
+    issue
+    |> Repo.preload(assignee: [], project: :team)
+    |> deliver_webhook(event, opts)
+
+    :ok
+  end
+
   defp deliver_from_task(%ErrorEvent{} = issue, event, opts) do
-    Process.delete(:"$callers")
+    unless req_test_webhook?(issue) do
+      Process.delete(:"$callers")
+    end
+
     deliver(issue, event, opts)
+  end
+
+  defp req_test_webhook?(%ErrorEvent{} = issue) do
+    project_webhook(issue.project) && match?({Req.Test, _stub}, Keyword.get(req_options(), :plug))
   end
 
   defp deliver_emails(%ErrorEvent{} = issue, event, opts) do
@@ -182,10 +212,14 @@ defmodule Argus.Projects.IssueNotifier do
 
   defp webhook_payload(%ErrorEvent{} = issue, event, opts) do
     occurrence = latest_occurrence(issue)
+    actor = Keyword.get(opts, :actor)
+    target_user = Keyword.get(opts, :target_user)
+    status_change = Keyword.get(opts, :status_change)
+    assignment_change = Keyword.get(opts, :assignment_change)
 
     %{
       event: webhook_event(event),
-      event_label: event_label(event),
+      event_label: webhook_event_label(event, issue, opts),
       occurred_at: DateTime.to_iso8601(issue.last_seen_at),
       issue: issue_payload(issue, occurrence),
       project: %{
@@ -197,9 +231,12 @@ defmodule Argus.Projects.IssueNotifier do
         id: issue.project.team.id,
         name: issue.project.team.name
       },
-      assignee: webhook_assignee(issue.assignee),
-      actor: webhook_actor(Keyword.get(opts, :actor)),
+      actor: webhook_user(actor),
+      target_user: webhook_user(target_user),
+      assignee: webhook_user(issue.assignee),
       change: webhook_change(Keyword.get(opts, :change)),
+      status_change: status_change_payload(status_change),
+      assignment_change: assignment_change_payload(assignment_change),
       occurrence: occurrence_payload(issue, occurrence),
       request: request_payload(issue, occurrence),
       sdk: sdk_payload(issue, occurrence),
@@ -210,23 +247,31 @@ defmodule Argus.Projects.IssueNotifier do
     }
   end
 
-  defp webhook_assignee(nil), do: nil
+  defp webhook_user(nil), do: nil
 
-  defp webhook_assignee(%User{} = assignee) do
+  defp webhook_user(%User{} = user) do
     %{
-      id: assignee.id,
-      name: assignee.name,
-      email: assignee.email
+      id: user.id,
+      name: user.name,
+      email: user.email
     }
   end
 
-  defp webhook_actor(nil), do: nil
+  defp status_change_payload(nil), do: nil
 
-  defp webhook_actor(%User{} = actor) do
+  defp status_change_payload(%{from: from, to: to}) do
     %{
-      id: actor.id,
-      name: actor.name,
-      email: actor.email
+      from: from,
+      to: to
+    }
+  end
+
+  defp assignment_change_payload(nil), do: nil
+
+  defp assignment_change_payload(%{from: from, to: to}) do
+    %{
+      from: webhook_user(from),
+      to: webhook_user(to)
     }
   end
 
@@ -245,6 +290,65 @@ defmodule Argus.Projects.IssueNotifier do
   defp event_label(:resolved), do: "An issue was resolved"
   defp event_label(:ignored), do: "An issue was ignored"
   defp event_label(:unresolved), do: "An issue was marked unresolved"
+
+  defp webhook_event_label(:created, %ErrorEvent{} = issue, _opts) do
+    case issue.assignee do
+      %User{} = assignee -> "A new issue assigned to #{assignee.name} was detected"
+      _ -> event_label(:created)
+    end
+  end
+
+  defp webhook_event_label(:reopened, %ErrorEvent{} = issue, opts) do
+    case Keyword.get(opts, :actor) do
+      %User{} = actor ->
+        "#{actor.name} reopened this issue"
+
+      _ ->
+        case issue.assignee do
+          %User{} = assignee -> "A resolved issue assigned to #{assignee.name} reappeared"
+          _ -> event_label(:reopened)
+        end
+    end
+  end
+
+  defp webhook_event_label(:assigned, _issue, opts) do
+    case Keyword.get(opts, :target_user) do
+      %User{} = target_user ->
+        "#{user_name(Keyword.get(opts, :actor))} assigned this issue to #{target_user.name}"
+
+      _ ->
+        event_label(:assigned)
+    end
+  end
+
+  defp webhook_event_label(:unassigned, _issue, opts) do
+    case Keyword.get(opts, :target_user) do
+      %User{} = target_user ->
+        "#{user_name(Keyword.get(opts, :actor))} unassigned #{target_user.name} from this issue"
+
+      _ ->
+        event_label(:unassigned)
+    end
+  end
+
+  defp webhook_event_label(:unresolved, _issue, _opts), do: event_label(:unresolved)
+
+  defp webhook_event_label(:resolved, _issue, opts) do
+    case Keyword.get(opts, :actor) do
+      %User{} = actor -> "#{actor.name} marked this issue as resolved"
+      _ -> event_label(:resolved)
+    end
+  end
+
+  defp webhook_event_label(:ignored, _issue, opts) do
+    case Keyword.get(opts, :actor) do
+      %User{} = actor -> "#{actor.name} marked this issue as ignored"
+      _ -> event_label(:ignored)
+    end
+  end
+
+  defp user_name(%User{name: name}) when is_binary(name) and name != "", do: name
+  defp user_name(_user), do: "Someone"
 
   defp subject_prefix(:created), do: "New issue"
   defp subject_prefix(:reopened), do: "Issue reappeared"
@@ -326,7 +430,12 @@ defmodule Argus.Projects.IssueNotifier do
         id: project.team.id,
         name: project.team.name
       },
+      actor: nil,
+      target_user: nil,
       assignee: nil,
+      change: nil,
+      status_change: nil,
+      assignment_change: nil,
       occurrence: %{
         event_id: "webhook-test",
         timestamp: DateTime.to_iso8601(timestamp),

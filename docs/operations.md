@@ -110,7 +110,12 @@ Email delivery runs after the issue write path. Failures are logged and do not f
 
 ### Webhook
 
-Triggered for the same lifecycle events as email.
+Triggered for issue lifecycle and user action events:
+
+- new issues
+- resolved issues that reappear
+- assignment and unassignment changes
+- manual resolve, ignore, and reopen actions
 
 Payload includes:
 
@@ -118,6 +123,7 @@ Payload includes:
 - issue summary
 - project and team identifiers
 - assignee data, if any
+- actor and target user data for user actions, if any
 - canonical issue URL
 
 Webhook delivery is also asynchronous and non-retrying in v1.
@@ -176,8 +182,8 @@ Argus supports Sentry log envelope items. If a client uses a payload type Argus 
 Check:
 
 - the project has a webhook URL and valid JSON body template in project settings
-- only new/reappearing issues trigger the webhook
-- existing unresolved/ignored issue updates do not trigger webhook delivery
+- new/reappearing issues and manual issue actions trigger the webhook
+- repeated SDK occurrences for existing unresolved/ignored issues do not trigger webhook delivery
 
 ### Team member removed but still appears assigned
 

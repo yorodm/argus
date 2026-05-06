@@ -225,7 +225,7 @@ defmodule ArgusWeb.ProjectLive.Settings do
               <div class="space-y-1">
                 <h2 class="text-lg font-semibold tracking-tight text-zinc-950">Issue webhook</h2>
                 <p class="text-sm text-zinc-500">
-                  Send new and reappearing issues from this project to a platform-specific webhook body.
+                  Send issue lifecycle and manual action events to a platform-specific webhook body.
                 </p>
               </div>
               <.badge kind={if @project.webhook_url, do: :configured, else: :not_configured}>

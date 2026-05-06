@@ -382,7 +382,9 @@ defmodule Argus.Projects do
     }
   end
 
-  def update_error_event_status(%ErrorEvent{} = error_event, status, opts \\ []) do
+  def update_error_event_status(error_event, status, opts \\ [])
+
+  def update_error_event_status(%ErrorEvent{} = error_event, status, opts) when is_list(opts) do
     if error_event.status == status do
       {:ok, Repo.preload(error_event, [:project, :assignee], force: true)}
     else
@@ -398,10 +400,15 @@ defmodule Argus.Projects do
 
           broadcast_issue({:error_event_updated, updated_error_event})
 
-          maybe_notify_issue(updated_error_event, status_event(status),
-            actor: Keyword.get(opts, :actor),
-            sync?: Keyword.get(opts, :sync?, false),
-            change: %{field: :status, from: previous_status, to: status}
+          change = %{field: :status, from: previous_status, to: status}
+
+          maybe_notify_issue(
+            updated_error_event,
+            status_event(status),
+            notification_opts(opts,
+              change: change,
+              status_change: %{from: previous_status, to: status}
+            )
           )
 
           {:ok, updated_error_event}
@@ -412,7 +419,18 @@ defmodule Argus.Projects do
     end
   end
 
-  def bulk_update_error_event_status(%Project{id: project_id}, ids, status, opts \\ []) do
+  def update_error_event_status(%User{} = actor, %ErrorEvent{} = error_event, status) do
+    update_error_event_status(error_event, status, actor: actor)
+  end
+
+  def bulk_update_error_event_status(project, ids, status, opts \\ [])
+
+  def bulk_update_error_event_status(%Project{} = project, ids, status, %User{} = actor) do
+    bulk_update_error_event_status(project, ids, status, actor: actor)
+  end
+
+  def bulk_update_error_event_status(%Project{id: project_id}, ids, status, opts)
+      when is_list(opts) do
     ids = Enum.uniq(ids)
 
     changes =
@@ -445,14 +463,16 @@ defmodule Argus.Projects do
     |> Enum.each(fn error_event ->
       broadcast_issue({:error_event_updated, error_event})
 
-      maybe_notify_issue(error_event, status_event(status),
-        actor: Keyword.get(opts, :actor),
-        sync?: Keyword.get(opts, :sync?, false),
-        change: %{
-          field: :status,
-          from: Map.fetch!(previous_status_by_id, error_event.id),
-          to: status
-        }
+      previous_status = Map.fetch!(previous_status_by_id, error_event.id)
+      change = %{field: :status, from: previous_status, to: status}
+
+      maybe_notify_issue(
+        error_event,
+        status_event(status),
+        notification_opts(opts,
+          change: change,
+          status_change: %{from: previous_status, to: status}
+        )
       )
     end)
 
@@ -751,12 +771,13 @@ defmodule Argus.Projects do
     )
   end
 
-  defp update_issue_assignee(%ErrorEvent{} = error_event, assignee_id, actor, opts) do
-    if error_event.assignee_id == assignee_id do
-      {:ok, Repo.preload(error_event, [:project, :assignee], force: true)}
-    else
-      previous_assignee_id = error_event.assignee_id
+  defp update_issue_assignee(%ErrorEvent{} = error_event, assignee_id, %User{} = actor, opts) do
+    previous_issue = Repo.preload(error_event, :assignee)
+    previous_assignee = previous_issue.assignee
 
+    if previous_issue.assignee_id == assignee_id do
+      {:ok, Repo.preload(previous_issue, [:project, :assignee], force: true)}
+    else
       error_event
       |> ErrorEvent.changeset(%{assignee_id: assignee_id})
       |> Repo.update()
@@ -767,10 +788,22 @@ defmodule Argus.Projects do
 
           broadcast_issue({:error_event_updated, updated_issue})
 
-          maybe_notify_issue(updated_issue, event,
-            actor: actor,
-            sync?: Keyword.get(opts, :sync?, false),
-            change: %{field: :assignee_id, from: previous_assignee_id, to: assignee_id}
+          change = %{
+            field: :assignee_id,
+            from: previous_issue.assignee_id,
+            to: assignee_id
+          }
+
+          maybe_notify_issue(
+            updated_issue,
+            event,
+            opts
+            |> Keyword.put(:actor, actor)
+            |> notification_opts(
+              change: change,
+              target_user: updated_issue.assignee || previous_assignee,
+              assignment_change: %{from: previous_assignee, to: updated_issue.assignee}
+            )
           )
 
           {:ok, updated_issue}
@@ -783,7 +816,11 @@ defmodule Argus.Projects do
 
   defp status_event(:resolved), do: :resolved
   defp status_event(:ignored), do: :ignored
-  defp status_event(:unresolved), do: :unresolved
+  defp status_event(:unresolved), do: :reopened
+
+  defp notification_opts(opts, extra) do
+    Keyword.take(opts, [:actor, :sync?]) ++ extra
+  end
 
   defp issue_topic(project_id), do: "project:#{project_id}:issues"
 

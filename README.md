@@ -60,7 +60,7 @@ The project DSN key is printed to stdout when the seeds run.
 - separate log storage with live tail support
 - Sentry metrics ingestion with charts and raw metric point inspection
 - users, teams, projects, invitations, and issue assignment
-- email notifications and an optional webhook for new and reappearing issues
+- email notifications and optional webhooks for issue lifecycle and manual action events
 
 ## Documentation
 

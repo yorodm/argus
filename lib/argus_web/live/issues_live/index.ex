@@ -328,7 +328,7 @@ defmodule ArgusWeb.IssuesLive.Index do
         socket.assigns.project,
         selected_ids,
         String.to_existing_atom(status),
-        actor: socket.assigns.current_scope.user
+        socket.assigns.current_scope.user
       )
     end
   end

@@ -40,6 +40,9 @@ defmodule Argus.Projects.IssueNotifierTest do
       configure_webhook!(project, ~s({
         "text": "{{event_label}} in {{project.name}}: {{issue.message}}",
         "issue": "{{issue}}",
+        "actor": "{{actor}}",
+        "target_user": "{{target_user}}",
+        "assignee": "{{assignee}}",
         "tags": "{{tags}}",
         "missing": "{{missing.path}}"
       }))
@@ -65,9 +68,15 @@ defmodule Argus.Projects.IssueNotifierTest do
     end)
 
     assert_receive {:webhook_request, payload}
-    assert payload["text"] == "A new issue was detected in #{project.name}: Checkout broke"
+
+    assert payload["text"] ==
+             "A new issue assigned to #{assignee.name} was detected in #{project.name}: Checkout broke"
+
     assert payload["issue"]["title"] == issue.title
     assert payload["issue"]["request_path"] == "/jobs/1"
+    assert payload["actor"] == nil
+    assert payload["target_user"] == nil
+    assert payload["assignee"]["name"] == assignee.name
     assert payload["tags"] == %{"environment" => "test"}
     assert payload["missing"] == nil
   end
@@ -355,6 +364,89 @@ defmodule Argus.Projects.IssueNotifierTest do
     assert :ok = IssueNotifier.deliver(issue, :created)
 
     refute_receive :unexpected_webhook_request
+  end
+
+  test "renders assignment webhook user names and assignment change data" do
+    %{team: team, project: project} = workspace_fixture()
+    actor = user_fixture(%{name: "Morgan Lee"})
+    assignee = user_fixture(%{name: "Casey Operator"})
+    membership_fixture(team, actor)
+    membership_fixture(team, assignee)
+
+    issue = insert_issue(project, assignee_id: assignee.id)
+
+    project =
+      configure_webhook!(project, ~s({
+        "text": "{{event_label}}",
+        "event": "{{event}}",
+        "actor_name": "{{actor.name}}",
+        "target_name": "{{target_user.name}}",
+        "assignee_name": "{{assignee.name}}",
+        "assignment_change": "{{assignment_change}}"
+      }))
+      |> Repo.preload(:team)
+
+    issue = Repo.preload(issue, assignee: [])
+    issue = %{issue | project: project}
+
+    Req.Test.stub(Argus.IssueWebhookStub, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+      send(self(), {:webhook_request, Jason.decode!(body)})
+      Req.Test.json(conn, %{"ok" => true})
+    end)
+
+    assert :ok =
+             IssueNotifier.deliver_webhook_event(issue, :assigned,
+               actor: actor,
+               target_user: assignee,
+               assignment_change: %{from: nil, to: assignee}
+             )
+
+    assert_receive {:webhook_request, payload}
+    assert payload["event"] == "issue_assigned"
+    assert payload["text"] == "#{actor.name} assigned this issue to #{assignee.name}"
+    assert payload["actor_name"] == actor.name
+    assert payload["target_name"] == assignee.name
+    assert payload["assignee_name"] == assignee.name
+    assert payload["assignment_change"]["from"] == nil
+    assert payload["assignment_change"]["to"]["name"] == assignee.name
+  end
+
+  test "renders status webhook user names and status change data" do
+    %{team: team, project: project} = workspace_fixture()
+    actor = user_fixture(%{name: "Morgan Lee"})
+    membership_fixture(team, actor)
+
+    issue = insert_issue(project)
+
+    project =
+      configure_webhook!(project, ~s({
+        "text": "{{event_label}}",
+        "event": "{{event}}",
+        "actor_name": "{{actor.name}}",
+        "status_change": "{{status_change}}"
+      }))
+      |> Repo.preload(:team)
+
+    issue = %{issue | project: project}
+
+    Req.Test.stub(Argus.IssueWebhookStub, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+      send(self(), {:webhook_request, Jason.decode!(body)})
+      Req.Test.json(conn, %{"ok" => true})
+    end)
+
+    assert :ok =
+             IssueNotifier.deliver_webhook_event(issue, :resolved,
+               actor: actor,
+               status_change: %{from: :unresolved, to: :resolved}
+             )
+
+    assert_receive {:webhook_request, payload}
+    assert payload["event"] == "issue_resolved"
+    assert payload["text"] == "#{actor.name} marked this issue as resolved"
+    assert payload["actor_name"] == actor.name
+    assert payload["status_change"] == %{"from" => "unresolved", "to" => "resolved"}
   end
 
   test "sends a project webhook test payload through the configured template" do

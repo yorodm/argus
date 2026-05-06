@@ -70,9 +70,9 @@ Each context owns a different kind of rule. `Ingest` handles payload shape and S
    - `:updated`
    - `:duplicate`
 5. LiveView subscribers refresh through PubSub.
-6. Notifications fire only for `:created` and `:reopened`.
+6. Ingest-driven email notifications fire only for `:created` and `:reopened`.
 
-Downstream behavior depends on that lifecycle result. Email and webhook delivery should run for a new issue or a reopened one, not for every update. Returning the result from the transaction is clearer than inferring it later from the stored row.
+Downstream ingest behavior depends on that lifecycle result. Email delivery and ingest-driven webhooks should run for a new issue or a reopened one, not for every repeated occurrence. Returning the result from the transaction is clearer than inferring it later from the stored row.
 
 ### Logs
 
@@ -106,6 +106,8 @@ Recipient rules:
 - otherwise notify all confirmed members of the owning team
 
 Assignment narrows ownership and noise. When no one is assigned, the whole team still needs to know about a new or returning problem.
+
+Webhooks also fire for user actions on issues. Assignment, unassignment, manual resolve, ignore, and reopen events include the acting user name and any affected assignee name in the webhook context and event label.
 
 ## Real-Time UI Model
 
