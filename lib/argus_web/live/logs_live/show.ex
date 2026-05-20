@@ -25,9 +25,9 @@ defmodule ArgusWeb.LogsLive.Show do
         </:actions>
       </.header>
 
-      <section class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_22rem]">
-        <div class="space-y-6">
-          <section class="border border-zinc-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+      <section class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.35fr)_22rem]">
+        <div class="min-w-0 space-y-6">
+          <section class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-6">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="space-y-3">
                 <div class="flex flex-wrap items-center gap-3">
@@ -57,7 +57,7 @@ defmodule ArgusWeb.LogsLive.Show do
           </section>
 
           <section>
-            <div class="flex flex-wrap items-center gap-5 border-b border-zinc-200 px-0 pt-1">
+            <div class="flex items-center gap-5 overflow-x-auto border-b border-zinc-200 px-0 pt-1 whitespace-nowrap">
               <.link
                 id="log-formatted-tab"
                 patch={log_patch(@project, @log_event, "formatted")}
@@ -74,7 +74,7 @@ defmodule ArgusWeb.LogsLive.Show do
               </.link>
             </div>
 
-            <div class="pt-6">
+            <div class="min-w-0 pt-6">
               <%= if @tab == "formatted" do %>
                 <div id="log-formatted-view" class="space-y-4">
                   <section
@@ -100,7 +100,7 @@ defmodule ArgusWeb.LogsLive.Show do
 
               <%= if @tab == "raw" do %>
                 <section id="log-raw-view" class="space-y-4">
-                  <div class="flex items-center justify-between gap-3">
+                  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div class="space-y-1">
                       <h2 class="text-lg font-semibold tracking-tight text-zinc-950">Raw payload</h2>
                       <p class="text-sm text-zinc-500">
@@ -121,7 +121,7 @@ defmodule ArgusWeb.LogsLive.Show do
                   <pre
                     id="log-raw-json"
                     phx-no-curly-interpolation
-                    class="overflow-x-auto border border-zinc-900 bg-zinc-950 p-5 font-mono text-xs leading-6 text-zinc-100"
+                    class="max-w-full overflow-x-auto border border-zinc-900 bg-zinc-950 p-4 font-mono text-xs leading-6 text-zinc-100 sm:p-5"
                   ><%= @raw_json %></pre>
                 </section>
               <% end %>
@@ -129,7 +129,7 @@ defmodule ArgusWeb.LogsLive.Show do
           </section>
         </div>
 
-        <aside class="space-y-6">
+        <aside class="min-w-0 space-y-6">
           <.data_panel
             id="log-summary-panel"
             title="Summary"
@@ -173,7 +173,10 @@ defmodule ArgusWeb.LogsLive.Show do
     |> assign(:tab, tab)
     |> assign(:raw_json, Jason.encode!(raw_log_payload(log_event), pretty: true))
     |> assign(:formatted_sections, formatted_sections(log_event))
-    |> assign(:sidebar, AppShell.build(socket.assigns.current_scope.user, project: project))
+    |> assign(
+      :sidebar,
+      AppShell.build(socket.assigns.current_scope.user, project: project, section: :logs)
+    )
   end
 
   defp parse_tab(tab) when tab in ~w(formatted raw), do: tab
@@ -198,7 +201,7 @@ defmodule ArgusWeb.LogsLive.Show do
     ~H"""
     <section
       id={@id}
-      class="border border-zinc-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]"
+      class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-5"
     >
       <h2 class="text-sm font-semibold text-zinc-950">{@title}</h2>
 
@@ -221,7 +224,7 @@ defmodule ArgusWeb.LogsLive.Show do
       <div
         :for={{entry, index} <- Enum.with_index(@entries)}
         class={[
-          "grid gap-1 px-4 py-2.5 sm:grid-cols-[88px_minmax(0,1fr)] sm:items-baseline sm:gap-4",
+          "grid min-w-0 gap-1 px-4 py-2.5 sm:grid-cols-[88px_minmax(0,1fr)] sm:items-baseline sm:gap-4",
           rem(index, 2) == 0 && "bg-zinc-50/80",
           rem(index, 2) == 1 && "bg-white"
         ]}
@@ -244,7 +247,7 @@ defmodule ArgusWeb.LogsLive.Show do
       <div
         :for={{entry, index} <- Enum.with_index(@entries)}
         class={[
-          "grid gap-2 px-4 py-2.5 sm:grid-cols-[220px_minmax(0,1fr)] sm:items-baseline sm:gap-6",
+          "grid min-w-0 gap-2 px-4 py-2.5 sm:grid-cols-[220px_minmax(0,1fr)] sm:items-baseline sm:gap-6",
           rem(index, 2) == 0 && "bg-zinc-50/80",
           rem(index, 2) == 1 && "bg-white"
         ]}
@@ -303,14 +306,14 @@ defmodule ArgusWeb.LogsLive.Show do
     ~H"""
     <section
       id={@id}
-      class="border border-zinc-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]"
+      class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-5"
     >
       <h2 class="text-sm font-semibold text-zinc-950">Identifiers</h2>
 
       <div class="mt-4 space-y-3">
         <div
           :for={{label, value} <- @rows}
-          class="grid gap-1 sm:grid-cols-[96px_minmax(0,1fr)] sm:items-baseline sm:gap-4"
+          class="grid min-w-0 gap-1 sm:grid-cols-[96px_minmax(0,1fr)] sm:items-baseline sm:gap-4"
         >
           <p class="text-xs font-medium text-zinc-500">
             {labelize(label)}

@@ -33,16 +33,16 @@ defmodule ArgusWeb.ProjectLive.Settings do
         </:actions>
       </.header>
 
-      <section class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div class="space-y-6">
-          <section class="border border-zinc-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+      <section class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <div class="min-w-0 space-y-6">
+          <section class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-6">
             <div class="mb-5">
               <h2 class="text-lg font-semibold tracking-tight text-zinc-950">Project information</h2>
               <p class="mt-1 text-sm text-zinc-500">
                 Read-only identifiers, ingestion credentials, and recent activity.
               </p>
             </div>
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid min-w-0 gap-4 sm:grid-cols-2">
               <div class="border border-zinc-200 bg-slate-50 px-4 py-4">
                 <p class="text-sm font-medium text-zinc-500">
                   Slug
@@ -112,7 +112,7 @@ defmodule ArgusWeb.ProjectLive.Settings do
             </div>
           </section>
 
-          <section class="border border-red-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+          <section class="min-w-0 border border-red-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-6">
             <div class="flex items-start justify-between gap-4">
               <div class="flex gap-3">
                 <div class="mt-0.5 flex size-9 items-center justify-center rounded-sm bg-red-50 text-red-700">
@@ -127,7 +127,7 @@ defmodule ArgusWeb.ProjectLive.Settings do
               </div>
             </div>
 
-            <div class="mt-6 flex items-center justify-between gap-4 border border-red-200 bg-red-50/70 px-4 py-4">
+            <div class="mt-6 flex flex-col gap-4 border border-red-200 bg-red-50/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p class="text-sm font-medium text-zinc-950">Delete this project</p>
                 <p class="mt-1 text-sm text-zinc-600">
@@ -147,8 +147,8 @@ defmodule ArgusWeb.ProjectLive.Settings do
           </section>
         </div>
 
-        <div class="space-y-6">
-          <section class="border border-zinc-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+        <div class="min-w-0 space-y-6">
+          <section class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-6">
             <div class="space-y-1">
               <h2 class="text-lg font-semibold tracking-tight text-zinc-950">Project settings</h2>
               <p class="text-sm text-zinc-500">
@@ -220,7 +220,7 @@ defmodule ArgusWeb.ProjectLive.Settings do
             </.form>
           </section>
 
-          <section class="border border-zinc-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+          <section class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-6">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="space-y-1">
                 <h2 class="text-lg font-semibold tracking-tight text-zinc-950">Issue webhook</h2>
@@ -406,7 +406,13 @@ defmodule ArgusWeb.ProjectLive.Settings do
     socket
     |> assign(:project, project)
     |> assign(:stats, stats)
-    |> assign(:sidebar, AppShell.build(socket.assigns.current_scope.user, project: project))
+    |> assign(
+      :sidebar,
+      AppShell.build(socket.assigns.current_scope.user,
+        project: project,
+        section: :project_settings
+      )
+    )
     |> assign(:delete_project_modal_open, false)
     |> assign(:project_form, to_form(Projects.change_project(project), as: :project))
     |> assign(:webhook_form, to_form(webhook_changeset(project), as: :project))

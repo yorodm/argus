@@ -13,6 +13,7 @@ defmodule ArgusWeb.AppShell do
   def build(user, opts \\ []) do
     teams = Teams.list_teams_for_user(user)
     active_project = Keyword.get(opts, :project)
+    section = Keyword.get(opts, :section, :overview)
 
     active_team =
       Keyword.get(opts, :team) ||
@@ -36,7 +37,14 @@ defmodule ArgusWeb.AppShell do
       active_team: active_team,
       projects: projects,
       active_project: active_project,
-      team_targets: team_targets
+      team_targets: team_targets,
+      section: section,
+      can_manage_active_team?: can_manage_team?(user, active_team),
+      can_manage_active_project?: can_manage_team?(user, active_project && active_project.team)
     }
   end
+
+  defp can_manage_team?(%{role: :admin}, _team), do: true
+  defp can_manage_team?(user, %Teams.Team{} = team), do: Teams.team_admin?(user, team)
+  defp can_manage_team?(_user, _team), do: false
 end

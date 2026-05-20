@@ -42,7 +42,7 @@ defmodule ArgusWeb.MetricsLive.Index do
           project_accent_border_class(@project)
         ]}
       >
-        <div class="border-b border-zinc-200 bg-slate-50 px-6 py-5">
+        <div class="border-b border-zinc-200 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
           <.form
             for={@filter_form}
             id="metric-filters"
@@ -71,10 +71,10 @@ defmodule ArgusWeb.MetricsLive.Index do
           </.form>
         </div>
 
-        <div class="grid gap-6 bg-white p-6">
+        <div class="grid min-w-0 gap-6 bg-white p-4 sm:p-6">
           <div
             id="project-metrics-chart-panel"
-            class="border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+            class="min-w-0 border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
           >
             <div class="flex flex-col gap-2 border-b border-zinc-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -101,15 +101,15 @@ defmodule ArgusWeb.MetricsLive.Index do
             <div
               :if={@metric_count > 0}
               id="project-metrics-chart-frame"
-              class="h-[420px] overflow-hidden px-4 py-5"
+              class="h-[320px] min-w-0 overflow-hidden px-2 py-4 sm:h-[420px] sm:px-4 sm:py-5"
             >
               <LiveCharts.chart chart={@metric_chart} />
             </div>
           </div>
 
-          <div class="overflow-hidden border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-            <table class="min-w-full divide-y divide-zinc-200 text-sm">
-              <thead class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          <div class="min-w-0 overflow-hidden border border-zinc-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+            <table class="w-full divide-y divide-zinc-200 text-sm">
+              <thead class="hidden bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 md:table-header-group">
                 <tr>
                   <th class="px-4 py-3.5">Timestamp</th>
                   <th class="px-4 py-3.5">Metric</th>
@@ -119,7 +119,11 @@ defmodule ArgusWeb.MetricsLive.Index do
                   <th class="px-4 py-3.5">Trace</th>
                 </tr>
               </thead>
-              <tbody id="metric-points" phx-update="stream" class="divide-y divide-zinc-100 bg-white">
+              <tbody
+                id="metric-points"
+                phx-update="stream"
+                class="bg-white md:divide-y md:divide-zinc-100"
+              >
                 <tr :if={@metric_count == 0} id="metric-points-empty-state">
                   <td colspan="6" class="px-6 py-12 text-center text-sm text-zinc-500">
                     No raw metric points match these filters.
@@ -128,24 +132,43 @@ defmodule ArgusWeb.MetricsLive.Index do
                 <tr
                   :for={{dom_id, metric_point} <- @streams.metric_points}
                   id={dom_id}
-                  class="align-top transition hover:bg-sky-50/45"
+                  class="mb-3 block border border-zinc-200 bg-white align-top shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition last:mb-0 hover:bg-sky-50/45 md:table-row md:border-0 md:shadow-none"
                 >
-                  <td class="px-4 py-4"><.relative_time at={metric_point.timestamp} /></td>
-                  <td class="px-4 py-4">
-                    <p class="font-mono text-xs font-semibold text-zinc-950">{metric_point.name}</p>
+                  <td class="block px-4 py-3 md:table-cell md:py-4">
+                    <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                      Timestamp
+                    </span>
+                    <.relative_time at={metric_point.timestamp} />
+                  </td>
+                  <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                    <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                      Metric
+                    </span>
+                    <p class="break-all font-mono text-xs font-semibold text-zinc-950">
+                      {metric_point.name}
+                    </p>
                     <p :if={metric_point.unit} class="mt-1 text-xs text-zinc-500">
                       unit: {metric_point.unit}
                     </p>
                   </td>
-                  <td class="px-4 py-4">
+                  <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                    <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                      Type
+                    </span>
                     <.badge kind={Atom.to_string(metric_point.type)}>
                       {metric_point.type}
                     </.badge>
                   </td>
-                  <td class="px-4 py-4 font-mono text-xs text-zinc-800">
+                  <td class="block border-t border-zinc-100 px-4 py-3 font-mono text-xs text-zinc-800 md:table-cell md:border-t-0 md:py-4">
+                    <span class="mb-1 block font-sans text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                      Value
+                    </span>
                     {format_metric_value(metric_point.value)}
                   </td>
-                  <td class="px-4 py-4">
+                  <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                    <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                      Attributes
+                    </span>
                     <div class="flex max-w-md flex-wrap gap-2">
                       <span
                         :for={{key, value} <- attribute_pills(metric_point)}
@@ -163,8 +186,11 @@ defmodule ArgusWeb.MetricsLive.Index do
                       </span>
                     </div>
                   </td>
-                  <td class="px-4 py-4">
-                    <p class="max-w-48 truncate font-mono text-xs text-zinc-500">
+                  <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                    <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                      Trace
+                    </span>
+                    <p class="max-w-full break-all font-mono text-xs text-zinc-500 md:max-w-48 md:truncate">
                       {metric_point.trace_id || "No trace"}
                     </p>
                     <p :if={metric_point.span_id} class="mt-1 font-mono text-xs text-zinc-400">
@@ -178,7 +204,7 @@ defmodule ArgusWeb.MetricsLive.Index do
             <div
               :if={@metric_count > 0}
               id="metrics-pagination"
-              class="flex flex-col gap-3 border-t border-zinc-200 bg-slate-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+              class="flex flex-col gap-3 border-t border-zinc-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
             >
               <p class="text-sm text-zinc-500">
                 Showing {@page_start}-{@page_end} of {@metric_count} points
@@ -248,7 +274,7 @@ defmodule ArgusWeb.MetricsLive.Index do
            :can_manage_project?,
            user.role == :admin || Teams.team_admin?(user, project.team)
          )
-         |> assign(:sidebar, AppShell.build(user, project: project))
+         |> assign(:sidebar, AppShell.build(user, project: project, section: :metrics))
          |> assign(:metric_name_options, metric_name_options(metric_names))
          |> assign(:filter_form, to_form(filters, as: :filters))
          |> assign(:shortcuts_modal_open, false)

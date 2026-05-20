@@ -27,8 +27,8 @@ defmodule ArgusWeb.TeamLive.Settings do
         </:actions>
       </.header>
 
-      <section class="border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
-        <div class="flex flex-wrap items-center gap-5 border-b border-zinc-200 px-6 pt-4">
+      <section class="min-w-0 border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+        <div class="flex items-center gap-5 overflow-x-auto border-b border-zinc-200 px-4 pt-4 whitespace-nowrap sm:px-6">
           <.link
             patch={~p"/teams/#{@team.id}/settings?tab=projects"}
             class={tab_class(@tab == "projects")}
@@ -40,7 +40,7 @@ defmodule ArgusWeb.TeamLive.Settings do
           </.link>
         </div>
 
-        <div class="p-6">
+        <div class="min-w-0 p-4 sm:p-6">
           <%= if @tab == "projects" do %>
             <div class="space-y-4">
               <div>
@@ -148,7 +148,7 @@ defmodule ArgusWeb.TeamLive.Settings do
                 </:col>
               </.table>
 
-              <section class="border border-zinc-200 bg-slate-50 p-5">
+              <section class="min-w-0 border border-zinc-200 bg-slate-50 p-4 sm:p-5">
                 <div class="space-y-1">
                   <h3 class="text-base font-semibold tracking-tight text-zinc-950">
                     Add existing user
@@ -303,7 +303,7 @@ defmodule ArgusWeb.TeamLive.Settings do
     |> assign(:projects, projects)
     |> assign(:project_stats, Projects.project_stats(projects))
     |> assign(:members, Teams.list_members(team))
-    |> assign(:sidebar, AppShell.build(user, team: team))
+    |> assign(:sidebar, AppShell.build(user, team: team, section: :team_settings))
     |> assign_forms()
   end
 

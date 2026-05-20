@@ -158,7 +158,7 @@ defmodule ArgusWeb.CoreComponents do
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div class="space-y-2">
+    <div class="min-w-0 space-y-2">
       <label
         :if={@label}
         for={@id}
@@ -170,7 +170,7 @@ defmodule ArgusWeb.CoreComponents do
         id={@id}
         name={@name}
         class={[
-          "w-full rounded-sm border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15",
+          "min-w-0 w-full rounded-sm border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15",
           @errors != [] && "border-red-300",
           @errors == [] && "border-zinc-200",
           @class
@@ -188,7 +188,7 @@ defmodule ArgusWeb.CoreComponents do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class="space-y-2">
+    <div class="min-w-0 space-y-2">
       <label
         :if={@label}
         for={@id}
@@ -200,7 +200,7 @@ defmodule ArgusWeb.CoreComponents do
         id={@id}
         name={@name}
         class={[
-          "min-h-28 w-full rounded-sm border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15",
+          "min-h-28 min-w-0 w-full rounded-sm border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15",
           @errors != [] && "border-red-300",
           @errors == [] && "border-zinc-200",
           @class
@@ -214,7 +214,7 @@ defmodule ArgusWeb.CoreComponents do
 
   def input(assigns) do
     ~H"""
-    <div class="space-y-2">
+    <div class="min-w-0 space-y-2">
       <label
         :if={@label}
         for={@id}
@@ -228,7 +228,7 @@ defmodule ArgusWeb.CoreComponents do
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class={[
-          "w-full rounded-sm border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15",
+          "min-w-0 w-full rounded-sm border bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/15",
           @errors != [] && "border-red-300",
           @errors == [] && "border-zinc-200",
           @class
@@ -258,15 +258,15 @@ defmodule ArgusWeb.CoreComponents do
   def header(assigns) do
     ~H"""
     <header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-      <div class="space-y-2">
-        <h1 class="text-3xl font-semibold tracking-tight text-zinc-950">
+      <div class="min-w-0 space-y-2">
+        <h1 class="break-words text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
           {render_slot(@inner_block)}
         </h1>
         <p :if={@subtitle != []} class="max-w-3xl text-sm leading-6 text-zinc-500">
           {render_slot(@subtitle)}
         </p>
       </div>
-      <div :if={@actions != []} class="flex shrink-0 flex-wrap items-center gap-3">
+      <div :if={@actions != []} class="flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:gap-3">
         {render_slot(@actions)}
       </div>
     </header>
@@ -385,20 +385,38 @@ defmodule ArgusWeb.CoreComponents do
 
   def table(assigns) do
     ~H"""
-    <div class={["border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)]", @class]}>
-      <table class="min-w-full divide-y divide-zinc-200/80 text-sm">
-        <thead class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+    <div class={[
+      "min-w-0 border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)]",
+      @class
+    ]}>
+      <table class="w-full divide-y divide-zinc-200/80 text-sm">
+        <thead class="hidden bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 md:table-header-group">
           <tr>
             <th :for={col <- @col} class="px-5 py-3.5">{col.label}</th>
           </tr>
         </thead>
-        <tbody id={@id} phx-update={@stream && "stream"} class="divide-y divide-zinc-100 bg-white">
+        <tbody
+          id={@id}
+          phx-update={@stream && "stream"}
+          class="bg-white md:divide-y md:divide-zinc-100"
+        >
           <tr
             :for={row <- @rows}
             id={@row_id && @row_id.(row)}
-            class="align-top text-zinc-700 transition hover:bg-sky-50/45"
+            class="mb-3 block border-b border-zinc-200 align-top text-zinc-700 transition last:mb-0 last:border-b-0 hover:bg-sky-50/45 md:table-row md:border-b-0"
           >
-            <td :for={col <- @col} class={["px-5 py-4", col[:class]]}>{render_slot(col, row)}</td>
+            <td
+              :for={col <- @col}
+              class={[
+                "block border-t border-zinc-100 px-4 py-3 first:border-t-0 md:table-cell md:border-t-0 md:px-5 md:py-4",
+                col[:class]
+              ]}
+            >
+              <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                {col.label}
+              </span>
+              <div class="min-w-0">{render_slot(col, row)}</div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -562,7 +580,7 @@ defmodule ArgusWeb.CoreComponents do
       </button>
     <% else %>
       <div class={[
-        "flex items-center gap-3 border border-zinc-200 bg-slate-50 px-4 py-3",
+        "flex min-w-0 items-center gap-3 border border-zinc-200 bg-slate-50 px-4 py-3",
         @class
       ]}>
         <code class="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-xs text-zinc-700">

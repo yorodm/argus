@@ -61,9 +61,9 @@ defmodule ArgusWeb.ProjectLive.Index do
             icon="hero-command-line"
           />
         <% true -> %>
-          <div class="space-y-6">
-            <section class="grid gap-4 xl:grid-cols-5">
-              <div class="border border-zinc-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+          <div class="min-w-0 space-y-6">
+            <section class="grid min-w-0 gap-4 xl:grid-cols-5">
+              <div class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-5">
                 <p class="text-sm font-medium text-zinc-500">
                   Projects
                 </p>
@@ -71,7 +71,7 @@ defmodule ArgusWeb.ProjectLive.Index do
                   {@summary.project_count}
                 </p>
               </div>
-              <div class="border border-red-200 border-l-4 border-l-red-500 bg-red-50/70 p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] xl:col-span-2">
+              <div class="min-w-0 border border-red-200 border-l-4 border-l-red-500 bg-red-50/70 p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-5 xl:col-span-2">
                 <p class="text-sm font-medium text-red-700">
                   Unresolved issues
                 </p>
@@ -79,7 +79,7 @@ defmodule ArgusWeb.ProjectLive.Index do
                   {@summary.unresolved_count}
                 </p>
               </div>
-              <div class="border border-zinc-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+              <div class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-5">
                 <p class="text-sm font-medium text-zinc-500">
                   Grouped issues
                 </p>
@@ -87,7 +87,7 @@ defmodule ArgusWeb.ProjectLive.Index do
                   {@summary.issue_count}
                 </p>
               </div>
-              <div class="border border-zinc-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+              <div class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-5">
                 <p class="text-sm font-medium text-zinc-500">
                   Latest issue
                 </p>
@@ -104,8 +104,8 @@ defmodule ArgusWeb.ProjectLive.Index do
               </div>
             </section>
 
-            <div class="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-              <section class="border border-zinc-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+            <div class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
+              <section class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-6">
                 <div class="flex items-end justify-between gap-4">
                   <div>
                     <h2 class="text-lg font-semibold tracking-tight text-zinc-950">Projects</h2>
@@ -115,19 +115,21 @@ defmodule ArgusWeb.ProjectLive.Index do
                   </div>
                 </div>
 
-                <div class="mt-6 grid gap-4 xl:grid-cols-2">
+                <div class="mt-6 grid min-w-0 gap-4 xl:grid-cols-2">
                   <article
                     :for={project <- @projects}
                     id={"project-card-#{project.id}"}
                     class={[
-                      "border border-t-4 border-zinc-200 bg-slate-50 p-5 transition hover:border-sky-200 hover:bg-white",
+                      "min-w-0 border border-t-4 border-zinc-200 bg-slate-50 p-4 transition hover:border-sky-200 hover:bg-white sm:p-5",
                       project_accent_border_class(project)
                     ]}
                   >
                     <div class="flex items-start justify-between gap-4">
                       <div class="min-w-0">
-                        <p class="text-base font-semibold text-zinc-950">{project.name}</p>
-                        <p class="mt-1 font-mono text-xs text-zinc-500">{project.slug}</p>
+                        <p class="break-words text-base font-semibold text-zinc-950">
+                          {project.name}
+                        </p>
+                        <p class="mt-1 break-all font-mono text-xs text-zinc-500">{project.slug}</p>
                       </div>
                       <.badge kind={
                         if project_stat(@project_stats, project.id, :unresolved_count) > 0,
@@ -175,8 +177,10 @@ defmodule ArgusWeb.ProjectLive.Index do
 
                     <div class="mt-5 border-t border-zinc-200 pt-4">
                       <%= if last_issue = last_issue(@project_stats, project.id) do %>
-                        <p class="text-sm font-medium text-zinc-950">{last_issue.title}</p>
-                        <p class="mt-1 font-mono text-xs text-zinc-500">
+                        <p class="break-words text-sm font-medium text-zinc-950">
+                          {last_issue.title}
+                        </p>
+                        <p class="mt-1 break-all font-mono text-xs text-zinc-500">
                           {last_issue.culprit || "No culprit captured"}
                         </p>
                         <div class="mt-3 flex items-center gap-3">
@@ -213,7 +217,7 @@ defmodule ArgusWeb.ProjectLive.Index do
 
               <section
                 id="recent-issues"
-                class="border border-zinc-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)]"
+                class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-6"
               >
                 <div>
                   <h2 class="text-lg font-semibold tracking-tight text-zinc-950">Recent issues</h2>
@@ -238,8 +242,8 @@ defmodule ArgusWeb.ProjectLive.Index do
                   >
                     <div class="flex items-start justify-between gap-4">
                       <div class="min-w-0">
-                        <p class="text-sm font-medium text-zinc-950">{issue.title}</p>
-                        <p class="mt-1 font-mono text-xs text-zinc-500">
+                        <p class="break-words text-sm font-medium text-zinc-950">{issue.title}</p>
+                        <p class="mt-1 break-all font-mono text-xs text-zinc-500">
                           {issue.project.name} / {issue.culprit || "No culprit captured"}
                         </p>
                       </div>
@@ -287,7 +291,7 @@ defmodule ArgusWeb.ProjectLive.Index do
        latest_issue_at: nil
      })
      |> assign(:can_manage_team?, false)
-     |> assign(:sidebar, AppShell.build(user))}
+     |> assign(:sidebar, AppShell.build(user, section: :overview))}
   end
 
   @impl true
@@ -315,7 +319,7 @@ defmodule ArgusWeb.ProjectLive.Index do
        :can_manage_team?,
        active_team && (user.role == :admin || Teams.team_admin?(user, active_team))
      )
-     |> assign(:sidebar, AppShell.build(user, team: active_team))}
+     |> assign(:sidebar, AppShell.build(user, team: active_team, section: :overview))}
   end
 
   defp build_summary(projects, project_stats, recent_issues) do

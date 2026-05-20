@@ -42,7 +42,7 @@ defmodule ArgusWeb.LogsLive.Index do
           project_accent_border_class(@project)
         ]}
       >
-        <div class="border-b border-zinc-200 bg-slate-50 px-6 py-5">
+        <div class="border-b border-zinc-200 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <.form
               for={@filter_form}
@@ -104,8 +104,8 @@ defmodule ArgusWeb.LogsLive.Index do
         </div>
 
         <div class="overflow-hidden bg-white">
-          <table class="min-w-full divide-y divide-zinc-200 text-sm">
-            <thead class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          <table class="w-full divide-y divide-zinc-200 text-sm">
+            <thead class="hidden bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 md:table-header-group">
               <tr>
                 <th class="px-4 py-3.5">Timestamp</th>
                 <th class="px-4 py-3.5">Level</th>
@@ -114,7 +114,7 @@ defmodule ArgusWeb.LogsLive.Index do
                 <th class="px-4 py-3.5">Actions</th>
               </tr>
             </thead>
-            <tbody id="logs" phx-update="stream" class="divide-y divide-zinc-100 bg-white">
+            <tbody id="logs" phx-update="stream" class="bg-white md:divide-y md:divide-zinc-100">
               <tr :if={@log_count == 0}>
                 <td colspan="5" class="px-6 py-16">
                   <.empty_state
@@ -128,26 +128,40 @@ defmodule ArgusWeb.LogsLive.Index do
                 :for={{dom_id, log_event} <- @streams.logs}
                 id={dom_id}
                 class={[
-                  "align-top transition hover:bg-sky-50/45",
+                  "mb-3 block border border-zinc-200 bg-white align-top shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition last:mb-0 hover:bg-sky-50/45 md:table-row md:border-0 md:shadow-none",
                   @highlight_log_id == log_event.id && "bg-emerald-50/70"
                 ]}
               >
-                <td class="px-4 py-4"><.relative_time at={log_event.timestamp} /></td>
-                <td class="px-4 py-4">
+                <td class="block px-4 py-3 md:table-cell md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Timestamp
+                  </span>
+                  <.relative_time at={log_event.timestamp} />
+                </td>
+                <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Level
+                  </span>
                   <.badge kind={log_event.level}>{log_event.level}</.badge>
                 </td>
-                <td class="px-4 py-4">
+                <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Message
+                  </span>
                   <.link
                     navigate={~p"/projects/#{@project.slug}/logs/#{log_event.id}"}
                     class="block w-full text-left"
                   >
-                    <p class="font-semibold text-zinc-950">{log_event.message}</p>
-                    <p class="mt-1 font-mono text-xs text-zinc-500">
+                    <p class="break-words font-semibold text-zinc-950">{log_event.message}</p>
+                    <p class="mt-1 break-words font-mono text-xs text-zinc-500">
                       {log_event.logger_name || log_event.origin || "metadata available"}
                     </p>
                   </.link>
                 </td>
-                <td class="px-4 py-4">
+                <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Metadata
+                  </span>
                   <div class="flex max-w-md flex-wrap gap-2">
                     <span
                       :for={{key, value} <- metadata_pills(log_event)}
@@ -162,7 +176,10 @@ defmodule ArgusWeb.LogsLive.Index do
                     </span>
                   </div>
                 </td>
-                <td class="px-4 py-4">
+                <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Actions
+                  </span>
                   <.action_button
                     navigate={~p"/projects/#{@project.slug}/logs/#{log_event.id}"}
                     icon="hero-arrow-top-right-on-square-mini"
@@ -178,7 +195,7 @@ defmodule ArgusWeb.LogsLive.Index do
         <div
           :if={@log_count > 0}
           id="logs-pagination"
-          class="flex flex-col gap-3 border-t border-zinc-200 bg-slate-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+          class="flex flex-col gap-3 border-t border-zinc-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
         >
           <p class="text-sm text-zinc-500">
             Showing {@page_start}-{@page_end} of {@log_count} logs
@@ -246,7 +263,7 @@ defmodule ArgusWeb.LogsLive.Index do
            :can_manage_project?,
            user.role == :admin || Teams.team_admin?(user, project.team)
          )
-         |> assign(:sidebar, AppShell.build(user, project: project))
+         |> assign(:sidebar, AppShell.build(user, project: project, section: :logs))
          |> assign(:filter_form, to_form(filters, as: :filters))
          |> assign(:tail_mode, false)
          |> assign(:highlight_log_id, nil)

@@ -13,6 +13,120 @@ defmodule ArgusWeb.Layouts do
     ~H"""
     <%= if @current_scope && @current_scope.user && @sidebar do %>
       <div class="min-h-screen bg-[#e8eaed] text-zinc-900">
+        <header
+          id="mobile-app-bar"
+          class="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 px-3 py-2.5 shadow-[0_1px_10px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden"
+        >
+          <div class="flex items-center gap-3">
+            <.link
+              navigate={ArgusWeb.UserAuth.signed_in_path(@current_scope.user)}
+              class="flex size-10 shrink-0 items-center justify-center rounded-[6px] border border-orange-200 bg-orange-50"
+            >
+              <img src={~p"/images/logo.svg"} alt="" class="h-5 w-7" />
+            </.link>
+
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-[11px] font-semibold uppercase text-zinc-500">
+                {active_team_name(@sidebar) || "Argus"}
+              </p>
+              <p class="truncate text-sm font-semibold text-zinc-950">
+                {active_project_name(@sidebar) || "Workspace"}
+              </p>
+            </div>
+
+            <details class="group relative">
+              <summary class="flex size-10 list-none cursor-pointer items-center justify-center rounded-[6px] border border-zinc-200 bg-white text-zinc-700 shadow-[0_1px_0_rgba(15,23,42,0.03)] transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700 [&::-webkit-details-marker]:hidden">
+                <span class="sr-only">Open navigation menu</span>
+                <.icon name="hero-bars-3-mini" class="size-5" />
+              </summary>
+
+              <div class="absolute right-0 top-full z-50 mt-2 max-h-[70vh] w-[min(21rem,calc(100vw-1.5rem))] overflow-y-auto rounded-[8px] border border-zinc-200 bg-white p-2 shadow-[0_22px_70px_rgba(15,23,42,0.22)] ring-1 ring-zinc-950/5">
+                <div :if={@sidebar.teams != []} class="space-y-1">
+                  <p class="px-3 py-2 text-[11px] font-semibold uppercase text-zinc-400">Teams</p>
+                  <.link
+                    :for={team <- @sidebar.teams}
+                    navigate={Map.get(@sidebar.team_targets, team.id)}
+                    class={[
+                      "flex min-h-11 items-center justify-between rounded-[6px] px-3 py-2 text-sm transition",
+                      @sidebar.active_team && @sidebar.active_team.id == team.id &&
+                        "bg-sky-50 font-semibold text-sky-800",
+                      (!@sidebar.active_team || @sidebar.active_team.id != team.id) &&
+                        "text-zinc-700 hover:bg-zinc-50"
+                    ]}
+                  >
+                    <span class="truncate">{team.name}</span>
+                    <.icon
+                      :if={@sidebar.active_team && @sidebar.active_team.id == team.id}
+                      name="hero-check-mini"
+                      class="size-4 text-sky-600"
+                    />
+                  </.link>
+                </div>
+
+                <div class="mt-2 border-t border-zinc-100 pt-2">
+                  <p class="px-3 py-2 text-[11px] font-semibold uppercase text-zinc-400">
+                    Projects
+                  </p>
+                  <div
+                    :if={@sidebar.projects == []}
+                    class="px-3 py-3 text-sm text-zinc-500"
+                  >
+                    No projects yet.
+                  </div>
+                  <.link
+                    :for={project <- @sidebar.projects}
+                    navigate={~p"/projects/#{project.slug}/issues"}
+                    class={[
+                      "flex min-h-11 items-center gap-3 rounded-[6px] px-3 py-2 text-sm transition",
+                      @sidebar.active_project && @sidebar.active_project.id == project.id &&
+                        "bg-zinc-950 font-semibold text-white",
+                      (!@sidebar.active_project || @sidebar.active_project.id != project.id) &&
+                        "text-zinc-700 hover:bg-zinc-50"
+                    ]}
+                  >
+                    <div class={[
+                      "flex size-6 shrink-0 items-center justify-center rounded-[5px] border text-[10px] font-semibold uppercase",
+                      project_light_avatar_class(project)
+                    ]}>
+                      {project_initial(project)}
+                    </div>
+                    <span class="truncate">{project.name}</span>
+                  </.link>
+                </div>
+
+                <div class="mt-2 border-t border-zinc-100 pt-2">
+                  <.link
+                    navigate={~p"/settings"}
+                    class="flex min-h-11 items-center gap-3 rounded-[6px] px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                  >
+                    <.icon name="hero-cog-6-tooth-mini" class="size-4 text-zinc-500" />
+                    <span>Account settings</span>
+                  </.link>
+                  <.link
+                    :if={@current_scope.user.role == :admin}
+                    navigate={~p"/admin"}
+                    class="flex min-h-11 items-center gap-3 rounded-[6px] px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                  >
+                    <.icon name="hero-shield-check-mini" class="size-4 text-zinc-500" />
+                    <span>Admin</span>
+                  </.link>
+                  <.link
+                    href={~p"/logout"}
+                    method="delete"
+                    class="flex min-h-11 items-center gap-3 rounded-[6px] px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                  >
+                    <.icon
+                      name="hero-arrow-left-start-on-rectangle-mini"
+                      class="size-4 text-zinc-500"
+                    />
+                    <span>Log out</span>
+                  </.link>
+                </div>
+              </div>
+            </details>
+          </div>
+        </header>
+
         <div class="flex min-h-screen">
           <aside
             id="app-sidebar"
@@ -164,12 +278,140 @@ defmodule ArgusWeb.Layouts do
             </div>
           </aside>
 
-          <main class="min-w-0 flex-1 bg-[#e8eaed] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            <div class="w-full space-y-8">
+          <main class="min-w-0 flex-1 bg-[#e8eaed] px-3 py-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] sm:px-5 lg:px-8 lg:py-8">
+            <div class="w-full min-w-0 space-y-5 lg:space-y-8">
               {render_slot(@inner_block)}
             </div>
           </main>
         </div>
+
+        <nav
+          id="mobile-bottom-nav"
+          aria-label="Primary mobile navigation"
+          class="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 px-2 pb-[calc(0.45rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_35px_rgba(15,23,42,0.12)] backdrop-blur lg:hidden"
+        >
+          <div class="mx-auto grid max-w-md grid-cols-5 gap-1">
+            <.mobile_nav_item
+              navigate={
+                if @sidebar.active_team,
+                  do: ~p"/projects?team_id=#{@sidebar.active_team.id}",
+                  else: ~p"/projects"
+              }
+              icon="hero-squares-2x2-mini"
+              label="Home"
+              active={@sidebar.section == :overview}
+            />
+
+            <%= if @sidebar.active_project do %>
+              <.mobile_nav_item
+                navigate={~p"/projects/#{@sidebar.active_project.slug}/issues"}
+                icon="hero-bug-ant-mini"
+                label="Issues"
+                active={@sidebar.section == :issues}
+              />
+              <.mobile_nav_item
+                navigate={~p"/projects/#{@sidebar.active_project.slug}/logs"}
+                icon="hero-document-text-mini"
+                label="Logs"
+                active={@sidebar.section == :logs}
+              />
+              <.mobile_nav_item
+                navigate={~p"/projects/#{@sidebar.active_project.slug}/metrics"}
+                icon="hero-chart-bar-mini"
+                label="Metrics"
+                active={@sidebar.section == :metrics}
+              />
+            <% else %>
+              <.mobile_nav_item
+                navigate={
+                  if @sidebar.active_team,
+                    do: ~p"/teams/#{@sidebar.active_team.id}/settings?tab=projects",
+                    else: ~p"/projects"
+                }
+                icon="hero-user-group-mini"
+                label="Team"
+                active={@sidebar.section == :team_settings}
+              />
+              <.mobile_nav_item
+                navigate={~p"/settings"}
+                icon="hero-cog-6-tooth-mini"
+                label="Account"
+                active={@sidebar.section == :account}
+              />
+              <.mobile_nav_item
+                :if={@current_scope.user.role == :admin}
+                navigate={~p"/admin"}
+                icon="hero-shield-check-mini"
+                label="Admin"
+                active={@sidebar.section == :admin}
+              />
+              <.mobile_nav_item
+                :if={@current_scope.user.role != :admin}
+                navigate={~p"/projects"}
+                icon="hero-command-line-mini"
+                label="Projects"
+                active={false}
+              />
+            <% end %>
+
+            <details class="group relative">
+              <summary class={[
+                "flex min-h-14 list-none cursor-pointer flex-col items-center justify-center gap-1 rounded-[8px] px-1 text-[10px] font-medium transition [&::-webkit-details-marker]:hidden",
+                @sidebar.section in [:project_settings, :team_settings, :account, :admin] &&
+                  "bg-zinc-950 text-white",
+                @sidebar.section not in [:project_settings, :team_settings, :account, :admin] &&
+                  "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
+              ]}>
+                <.icon name="hero-ellipsis-horizontal-mini" class="size-5" />
+                <span>More</span>
+              </summary>
+              <div class="absolute bottom-full right-0 mb-3 w-56 rounded-[8px] border border-zinc-200 bg-white p-1.5 shadow-[0_22px_70px_rgba(15,23,42,0.22)] ring-1 ring-zinc-950/5">
+                <.link
+                  :if={@sidebar.active_project && Map.get(@sidebar, :can_manage_active_project?)}
+                  navigate={~p"/projects/#{@sidebar.active_project.slug}/settings"}
+                  class="flex min-h-11 items-center gap-3 rounded-[6px] px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                >
+                  <.icon name="hero-adjustments-horizontal-mini" class="size-4 text-zinc-500" />
+                  <span>Project settings</span>
+                </.link>
+                <.link
+                  :if={@sidebar.active_team && Map.get(@sidebar, :can_manage_active_team?)}
+                  navigate={~p"/teams/#{@sidebar.active_team.id}/settings?tab=projects"}
+                  class="flex min-h-11 items-center gap-3 rounded-[6px] px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                >
+                  <.icon name="hero-user-group-mini" class="size-4 text-zinc-500" />
+                  <span>Team settings</span>
+                </.link>
+                <.link
+                  navigate={~p"/settings"}
+                  class="flex min-h-11 items-center gap-3 rounded-[6px] px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                >
+                  <.icon name="hero-cog-6-tooth-mini" class="size-4 text-zinc-500" />
+                  <span>Account settings</span>
+                </.link>
+                <.link
+                  :if={@current_scope.user.role == :admin}
+                  navigate={~p"/admin"}
+                  class="flex min-h-11 items-center gap-3 rounded-[6px] px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                >
+                  <.icon name="hero-shield-check-mini" class="size-4 text-zinc-500" />
+                  <span>Admin</span>
+                </.link>
+                <.link
+                  href={~p"/logout"}
+                  method="delete"
+                  class="flex min-h-11 items-center gap-3 rounded-[6px] px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                >
+                  <.icon
+                    name="hero-arrow-left-start-on-rectangle-mini"
+                    class="size-4 text-zinc-500"
+                  />
+                  <span>Log out</span>
+                </.link>
+              </div>
+            </details>
+          </div>
+        </nav>
       </div>
     <% else %>
       <main class="flex min-h-screen items-center justify-center bg-[#e8eaed] px-6 py-12">
@@ -183,6 +425,30 @@ defmodule ArgusWeb.Layouts do
 
   defp active_team_name(%{active_team: %{name: name}}), do: name
   defp active_team_name(_sidebar), do: nil
+
+  defp active_project_name(%{active_project: %{name: name}}), do: name
+  defp active_project_name(_sidebar), do: nil
+
+  attr :navigate, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :active, :boolean, default: false
+
+  def mobile_nav_item(assigns) do
+    ~H"""
+    <.link
+      navigate={@navigate}
+      class={[
+        "flex min-h-14 flex-col items-center justify-center gap-1 rounded-[8px] px-1 text-[10px] font-medium transition",
+        @active && "bg-zinc-950 text-white",
+        !@active && "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
+      ]}
+    >
+      <.icon name={@icon} class="size-5" />
+      <span class="max-w-full truncate">{@label}</span>
+    </.link>
+    """
+  end
 
   attr :flash, :map, required: true
   attr :id, :string, default: "flash-group"

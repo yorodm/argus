@@ -65,10 +65,10 @@ defmodule ArgusWeb.IssuesLive.Show do
       <section
         id="issue-detail-shortcuts"
         phx-hook="KeyboardShortcuts"
-        class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_22rem]"
+        class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.35fr)_22rem]"
       >
-        <div class="space-y-6">
-          <section class="border border-zinc-200 bg-white p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+        <div class="min-w-0 space-y-6">
+          <section class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-6">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="flex flex-wrap items-center gap-3">
                 <.badge kind={@issue.level}>{@issue.level}</.badge>
@@ -119,8 +119,8 @@ defmodule ArgusWeb.IssuesLive.Show do
             </div>
           </section>
 
-          <section class="border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
-            <div class="flex flex-wrap items-center gap-5 border-b border-zinc-200 px-6 pt-4">
+          <section class="min-w-0 border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+            <div class="flex items-center gap-5 overflow-x-auto border-b border-zinc-200 px-4 pt-4 whitespace-nowrap sm:px-6">
               <.link
                 id="issue-event-tab"
                 patch={
@@ -198,13 +198,13 @@ defmodule ArgusWeb.IssuesLive.Show do
               </.link>
             </div>
 
-            <div class="p-6">
+            <div class="min-w-0 p-4 sm:p-6">
               <%= if @tab == "event" do %>
                 <%= if @selected_occurrence do %>
                   <div id="issue-event-view" class="space-y-6">
                     <section
                       id="issue-selected-event"
-                      class="border border-zinc-200 bg-slate-50 px-5 py-5"
+                      class="min-w-0 border border-zinc-200 bg-slate-50 px-4 py-4 sm:px-5 sm:py-5"
                     >
                       <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="space-y-2">
@@ -350,12 +350,12 @@ defmodule ArgusWeb.IssuesLive.Show do
                     ]}
                   >
                     <div class="flex flex-wrap items-start justify-between gap-4">
-                      <div class="space-y-1">
+                      <div class="min-w-0 space-y-1">
                         <p class="text-sm font-medium text-zinc-950">
                           {primary_exception_title(occurrence) || occurrence.request_url ||
                             "Stored event"}
                         </p>
-                        <p class="font-mono text-xs text-zinc-500">
+                        <p class="break-all font-mono text-xs text-zinc-500">
                           {occurrence.request_url || "No request URL"}
                         </p>
                       </div>
@@ -367,7 +367,7 @@ defmodule ArgusWeb.IssuesLive.Show do
                         User: {occurrence.user_context["email"] || occurrence.user_context["id"] ||
                           "unknown"}
                       </span>
-                      <span class="font-mono text-xs text-zinc-500">
+                      <span class="break-all font-mono text-xs text-zinc-500">
                         {occurrence.event_id}
                       </span>
                     </div>
@@ -461,7 +461,7 @@ defmodule ArgusWeb.IssuesLive.Show do
 
               <%= if @tab == "context" do %>
                 <div class="space-y-6">
-                  <div class="grid gap-4 xl:grid-cols-4">
+                  <div class="grid min-w-0 gap-4 xl:grid-cols-4">
                     <.data_panel
                       title="Runtime"
                       data={@context.runtime}
@@ -491,10 +491,10 @@ defmodule ArgusWeb.IssuesLive.Show do
           </section>
         </div>
 
-        <aside class="space-y-6">
+        <aside class="min-w-0 space-y-6">
           <section
             id="issue-assignee-panel"
-            class="border border-zinc-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]"
+            class="min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-5"
           >
             <div class="space-y-1">
               <h2 class="text-sm font-semibold text-zinc-950">
@@ -743,7 +743,10 @@ defmodule ArgusWeb.IssuesLive.Show do
     |> assign_new(:shortcuts_modal_open, fn -> false end)
     |> assign(:project, project)
     |> assign(:issue, issue)
-    |> assign(:sidebar, AppShell.build(socket.assigns.current_scope.user, project: project))
+    |> assign(
+      :sidebar,
+      AppShell.build(socket.assigns.current_scope.user, project: project, section: :issues)
+    )
     |> assign(:tab, tab)
     |> assign(:frame_mode, frame_mode)
     |> assign(:occurrence_summaries, occurrence_summaries)
@@ -882,7 +885,7 @@ defmodule ArgusWeb.IssuesLive.Show do
     >
       <summary class="cursor-pointer list-none px-4 py-4">
         <div class="flex flex-wrap items-start justify-between gap-4">
-          <div class="space-y-1">
+          <div class="min-w-0 space-y-1">
             <div class="flex flex-wrap items-center gap-2">
               <p class="text-sm font-semibold text-zinc-950">
                 {@frame["function"] || @frame["module"] || "anonymous"}
@@ -894,7 +897,7 @@ defmodule ArgusWeb.IssuesLive.Show do
                 in app
               </span>
             </div>
-            <p class="font-mono text-xs text-zinc-500">{frame_location(@frame)}</p>
+            <p class="break-all font-mono text-xs text-zinc-500">{frame_location(@frame)}</p>
           </div>
 
           <span :if={@selected} class="text-xs font-medium text-sky-700">
@@ -973,14 +976,17 @@ defmodule ArgusWeb.IssuesLive.Show do
     ~H"""
     <section
       id={@id}
-      class={["border border-zinc-200 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]", @class]}
+      class={[
+        "min-w-0 border border-zinc-200 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] sm:p-5",
+        @class
+      ]}
     >
       <h2 class="text-sm font-semibold text-zinc-950">{@title}</h2>
 
       <%= if map_size(@data || %{}) == 0 do %>
         <p class="mt-4 text-sm leading-6 text-zinc-500">{@empty_text}</p>
       <% else %>
-        <div class="mt-4">
+        <div class="mt-4 min-w-0">
           <.structured_entries entries={map_entries(@data)} />
         </div>
       <% end %>
@@ -1024,7 +1030,7 @@ defmodule ArgusWeb.IssuesLive.Show do
               </div>
             </details>
           <% true -> %>
-            <div class="grid gap-1 sm:grid-cols-[112px_minmax(0,1fr)] sm:gap-4">
+            <div class="grid min-w-0 gap-1 sm:grid-cols-[112px_minmax(0,1fr)] sm:gap-4">
               <p class="text-xs font-medium text-zinc-500">
                 {labelize(key)}
               </p>

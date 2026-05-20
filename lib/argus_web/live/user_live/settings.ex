@@ -80,7 +80,7 @@ defmodule ArgusWeb.UserLive.Settings do
 
     {:ok,
      socket
-     |> assign(:sidebar, AppShell.build(user))
+     |> assign(:sidebar, AppShell.build(user, section: :account))
      |> assign(
        :profile_form,
        to_form(Accounts.change_user_profile(user, %{}, validate_unique: false), as: :user)
@@ -109,7 +109,7 @@ defmodule ArgusWeb.UserLive.Settings do
         {:noreply,
          socket
          |> assign(:current_scope, Scope.for_user(user))
-         |> assign(:sidebar, AppShell.build(user))
+         |> assign(:sidebar, AppShell.build(user, section: :account))
          |> assign(
            :profile_form,
            to_form(Accounts.change_user_profile(user, %{}, validate_unique: false), as: :user)

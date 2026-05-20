@@ -39,7 +39,7 @@ defmodule ArgusWeb.AdminLive.Index do
       <section class="border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
         <div
           id="admin-tabs"
-          class="flex flex-wrap items-center gap-5 border-b border-zinc-200 px-6 pt-4"
+          class="flex items-center gap-5 overflow-x-auto border-b border-zinc-200 px-4 pt-4 whitespace-nowrap sm:px-6"
         >
           <.link patch={~p"/admin?tab=users"} class={tab_class(@tab == "users")}>Users</.link>
           <.link patch={~p"/admin?tab=teams"} class={tab_class(@tab == "teams")}>Teams</.link>
@@ -51,7 +51,7 @@ defmodule ArgusWeb.AdminLive.Index do
           </.link>
         </div>
 
-        <div class="p-6">
+        <div class="min-w-0 p-4 sm:p-6">
           <%= if @tab == "users" do %>
             <div class="space-y-4">
               <div>
@@ -460,7 +460,7 @@ defmodule ArgusWeb.AdminLive.Index do
     else
       {:ok,
        socket
-       |> assign(:sidebar, AppShell.build(user))
+       |> assign(:sidebar, AppShell.build(user, section: :admin))
        |> assign(:invite_modal_open, false)
        |> assign(:team_modal_open, false)
        |> assign(:user_modal_open, false)

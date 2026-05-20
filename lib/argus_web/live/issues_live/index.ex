@@ -35,7 +35,7 @@ defmodule ArgusWeb.IssuesLive.Index do
           project_accent_border_class(@project)
         ]}
       >
-        <div class="border-b border-zinc-200 bg-slate-50 px-6 py-5">
+        <div class="border-b border-zinc-200 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <.form
               for={@filter_form}
@@ -95,8 +95,8 @@ defmodule ArgusWeb.IssuesLive.Index do
         </div>
 
         <div class="overflow-hidden bg-white">
-          <table class="min-w-full divide-y divide-zinc-200 text-sm">
-            <thead class="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          <table class="w-full divide-y divide-zinc-200 text-sm">
+            <thead class="hidden bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 md:table-header-group">
               <tr>
                 <th class="w-12 px-4 py-3.5"></th>
                 <th class="px-4 py-3.5">Issue</th>
@@ -107,7 +107,7 @@ defmodule ArgusWeb.IssuesLive.Index do
                 <th class="px-4 py-3.5">Last seen</th>
               </tr>
             </thead>
-            <tbody id="issues" phx-update="stream" class="divide-y divide-zinc-100 bg-white">
+            <tbody id="issues" phx-update="stream" class="bg-white md:divide-y md:divide-zinc-100">
               <tr :if={@issue_count == 0} id="issues-empty-state">
                 <td colspan="7" class="px-6 py-16">
                   <.empty_state
@@ -132,45 +132,65 @@ defmodule ArgusWeb.IssuesLive.Index do
               <tr
                 :for={{dom_id, issue} <- @streams.issues}
                 id={dom_id}
-                class="align-top transition hover:bg-sky-50/45"
+                class="mb-3 block border border-zinc-200 bg-white align-top shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition last:mb-0 hover:bg-sky-50/45 md:table-row md:border-0 md:shadow-none"
               >
-                <td class="px-4 py-4">
-                  <input
-                    type="checkbox"
-                    checked={MapSet.member?(@selected_ids, issue.id)}
-                    phx-click="toggle-select"
-                    phx-value-id={issue.id}
-                    class="h-4 w-4 rounded-sm border-zinc-300 text-sky-600 focus:ring-sky-500"
-                  />
+                <td class="block px-4 py-3 md:table-cell md:py-4">
+                  <div class="flex items-center justify-between gap-3 md:block">
+                    <span class="text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                      Select
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={MapSet.member?(@selected_ids, issue.id)}
+                      phx-click="toggle-select"
+                      phx-value-id={issue.id}
+                      class="h-4 w-4 rounded-sm border-zinc-300 text-sky-600 focus:ring-sky-500"
+                    />
+                  </div>
                 </td>
-                <td class="px-4 py-4">
+                <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Issue
+                  </span>
                   <.link
                     navigate={~p"/projects/#{@project.slug}/issues/#{issue.id}"}
                     class="block space-y-1"
                   >
                     <p class="font-semibold text-zinc-950">{issue.title}</p>
-                    <p class="font-mono text-xs text-zinc-500">
+                    <p class="break-words font-mono text-xs text-zinc-500">
                       {issue.culprit || "No culprit captured"}
                     </p>
                   </.link>
                 </td>
-                <td class="px-4 py-4">
+                <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Assignee
+                  </span>
                   <%= if issue.assignee do %>
                     <div class="space-y-1">
                       <p class="text-sm font-medium text-zinc-950">{issue.assignee.name}</p>
-                      <p class="text-xs text-zinc-500">{issue.assignee.email}</p>
+                      <p class="break-all text-xs text-zinc-500">{issue.assignee.email}</p>
                     </div>
                   <% else %>
                     <span class="text-sm text-zinc-400">Unassigned</span>
                   <% end %>
                 </td>
-                <td class="px-4 py-4">
+                <td class="inline-block border-t border-zinc-100 px-4 py-3 align-top md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Level
+                  </span>
                   <.badge kind={issue.level}>{issue.level}</.badge>
                 </td>
-                <td class="px-4 py-4">
+                <td class="inline-block border-t border-zinc-100 px-4 py-3 align-top md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Status
+                  </span>
                   <.badge kind={issue.status}>{issue.status}</.badge>
                 </td>
-                <td class="px-4 py-4">
+                <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Count
+                  </span>
                   <div class="flex items-center gap-3">
                     <div>
                       <p class="font-medium text-zinc-800">{issue.occurrence_count} total</p>
@@ -185,7 +205,12 @@ defmodule ArgusWeb.IssuesLive.Index do
                     />
                   </div>
                 </td>
-                <td class="px-4 py-4"><.relative_time at={issue.last_seen_at} /></td>
+                <td class="block border-t border-zinc-100 px-4 py-3 md:table-cell md:border-t-0 md:py-4">
+                  <span class="mb-1 block text-[11px] font-semibold uppercase text-zinc-400 md:hidden">
+                    Last seen
+                  </span>
+                  <.relative_time at={issue.last_seen_at} />
+                </td>
               </tr>
             </tbody>
           </table>
@@ -232,7 +257,7 @@ defmodule ArgusWeb.IssuesLive.Index do
            :can_manage_project?,
            user.role == :admin || Teams.team_admin?(user, project.team)
          )
-         |> assign(:sidebar, AppShell.build(user, project: project))
+         |> assign(:sidebar, AppShell.build(user, project: project, section: :issues))
          |> assign(:filter_form, to_form(filters, as: :filters))
          |> assign(:selected_ids, MapSet.new())
          |> assign(:shortcuts_modal_open, false)
