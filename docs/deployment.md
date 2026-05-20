@@ -259,9 +259,33 @@ docker run -d \
 
 If your reverse proxy runs on the same Docker network, omit `-p 4000:4000` and publish only the proxy.
 
-## Example Docker Compose
+## Quick Docker Compose Install
 
-For a single-host deployment, a small Compose stack is enough:
+For a first single-host install, use Docker Compose as the operator runbook. The application still reads runtime configuration from environment variables; do not edit files under `config/` on the production host.
+
+Create `.env.production` next to your Compose file:
+
+```dotenv
+DATABASE_URL=ecto://argus:change-me@db/argus
+SECRET_KEY_BASE=replace-with-generated-secret
+PHX_HOST=argus.example.com
+PORT=4000
+POOL_SIZE=10
+```
+
+Generate `SECRET_KEY_BASE` with:
+
+```bash
+mix phx.gen.secret
+```
+
+If Elixir is not installed on the host, generate an equivalent secret with:
+
+```bash
+openssl rand -base64 48
+```
+
+Create `compose.yaml`. Replace the `app.image` value with the image tag you built or pulled.
 
 ```yaml
 services:
@@ -295,12 +319,47 @@ volumes:
   argus-db:
 ```
 
-With that layout, set `DATABASE_URL=ecto://argus:change-me@db/argus` in `.env.production`, then use:
+Start PostgreSQL first:
+
+```bash
+docker compose up -d db
+```
+
+Run the migrations:
 
 ```bash
 docker compose run --rm app /app/bin/migrate
+```
+
+Start Argus:
+
+```bash
 docker compose up -d app
 ```
+
+Create the first admin user:
+
+```bash
+docker compose run --rm app /app/bin/argus eval '
+Application.ensure_all_started(:argus)
+
+{:ok, user} =
+  Argus.Accounts.create_user(%{
+    email: "admin@example.com",
+    name: "Argus Admin",
+    role: :admin,
+    password: "replace-this-password",
+    password_confirmation: "replace-this-password",
+    confirmed: true
+  })
+
+IO.puts("Created #{user.email}")
+'
+```
+
+Open the app at the configured host and log in with that admin account. After the first admin exists, create all other users through invitations in the UI.
+
+For local testing without TLS, set `PHX_HOST=localhost` and open `http://localhost:4000`. For production behind a reverse proxy, set `PHX_HOST` to the public hostname that users and SDKs reach.
 
 ## Using the Image in Production
 

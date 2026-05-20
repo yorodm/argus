@@ -24,6 +24,8 @@ Each deployment hosts one internal workspace. Admins invite users, teams own pro
 
 ## Quick Start
 
+For local development:
+
 1. Install dependencies and prepare the database:
 
    ```bash
@@ -37,6 +39,8 @@ Each deployment hosts one internal workspace. Admins invite users, teams own pro
    ```
 
 3. Visit `http://localhost:4000`.
+
+For a production or container install, use the [Docker Compose quick install](docs/deployment.md#quick-docker-compose-install).
 
 ## Seeded Access
 
